@@ -27,7 +27,11 @@ app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 app.use(
   cors({
-    origin: ["http://localhost:3000", "http://localhost:3001"],
+    origin: [
+      "http://localhost:3000",
+      "http://localhost:3001",
+      "https://appointment-frontend-livid-xi.vercel.app",
+    ],
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
@@ -44,7 +48,6 @@ app.get("/", (req, res) => {
     message: "Appointment Backend is running 🚀",
   });
 });
-
 
 /* ---------------- ROUTES ---------------- */
 app.use("/api/auth", authRoutes);
