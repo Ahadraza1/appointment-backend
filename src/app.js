@@ -37,6 +37,15 @@ app.use(
 app.use(express.json()); // parse JSON body
 app.use(express.urlencoded({ extended: true }));
 
+// Root health check route
+app.get("/", (req, res) => {
+  res.status(200).json({
+    status: "OK",
+    message: "Appointment Backend is running 🚀",
+  });
+});
+
+
 /* ---------------- ROUTES ---------------- */
 app.use("/api/auth", authRoutes);
 app.use("/api/services", serviceRoutes);
