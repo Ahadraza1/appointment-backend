@@ -153,23 +153,28 @@ export const bookAppointment = async (req, res) => {
     );
 
     /* ================= ADMIN EMAIL NOTIFICATION ================= */
-    const adminEmail = process.env.ADMIN_EMAIL;
+const adminEmail = process.env.ADMIN_EMAIL;
 
-    if (adminEmail) {
-      await transporter.sendMail({
-        from: `"${req.user.name}" <${process.env.EMAIL_FROM_ADDRESS}>`,
-        replyTo: req.user.email, // 🔥 customer specific
-        to: process.env.ADMIN_EMAIL,
-        subject: "New Appointment Booked ",
-        html: `
-    <h3>New Appointment</h3>
-    <p><b>Customer:</b> ${req.user.name}</p>
-    <p><b>Email:</b> ${req.user.email}</p>
-    <p><b>Date:</b> ${date}</p>
-    <p><b>Time:</b> ${timeSlot}</p>
-  `,
-      });
-    }
+if (adminEmail && process.env.EMAIL_FROM_ADDRESS) {
+  try {
+    await transporter.sendMail({
+      from: `"${req.user.name}" <${process.env.EMAIL_FROM_ADDRESS}>`,
+      replyTo: req.user.email,
+      to: adminEmail,
+      subject: "New Appointment Booked",
+      html: `
+        <h3>New Appointment</h3>
+        <p><b>Customer:</b> ${req.user.name}</p>
+        <p><b>Email:</b> ${req.user.email}</p>
+        <p><b>Date:</b> ${date}</p>
+        <p><b>Time:</b> ${timeSlot}</p>
+      `,
+    });
+  } catch (mailError) {
+    console.error("EMAIL ERROR (BOOK APPOINTMENT):", mailError.message);
+  }
+}
+
 
     /* ================= EMAIL END ================= */
 
@@ -449,20 +454,24 @@ export const cancelAppointment = async (req, res) => {
     }
 
     /* ================= ADMIN EMAIL (CANCEL) ================= */
-    const adminEmail = process.env.ADMIN_EMAIL;
+const adminEmail = process.env.ADMIN_EMAIL;
 
-    if (adminEmail) {
-      await transporter.sendMail({
-        from: `"${req.user.name}" <${process.env.EMAIL_FROM_ADDRESS}>`,
-        replyTo: req.user.email, // 🔥 customer specific
-        to: process.env.ADMIN_EMAIL,
-        subject: "Appointment Cancelled ❌",
-        html: `
-          <p><b>${req.user.name}</b> cancelled an appointment.</p>
-          <p>ID: ${appointment._id}</p>
-        `,
-      });
-    }
+if (adminEmail && process.env.EMAIL_FROM_ADDRESS) {
+  try {
+    await transporter.sendMail({
+      from: `"${req.user.name}" <${process.env.EMAIL_FROM_ADDRESS}>`,
+      replyTo: req.user.email,
+      to: adminEmail,
+      subject: "Appointment Cancelled ❌",
+      html: `
+        <p><b>${req.user.name}</b> cancelled an appointment.</p>
+        <p>ID: ${appointment._id}</p>
+      `,
+    });
+  } catch (mailError) {
+    console.error("EMAIL ERROR (CANCEL):", mailError.message);
+  }
+}
     /* ================= EMAIL END ================= */
 
     res.json({ message: "Appointment cancelled", appointment });
@@ -522,21 +531,26 @@ export const rescheduleAppointment = async (req, res) => {
     await appointment.save();
 
     /* ================= ADMIN EMAIL (RESCHEDULE) ================= */
-    const adminEmail = process.env.ADMIN_EMAIL;
+const adminEmail = process.env.ADMIN_EMAIL;
 
-    if (adminEmail) {
-      await transporter.sendMail({
-        from: `"${req.user.name}" <${process.env.EMAIL_FROM_ADDRESS}>`,
-        replyTo: req.user.email, // 🔥 customer specific
-        to: process.env.ADMIN_EMAIL,
-        subject: "Appointment Rescheduled 🔁",
-        html: `
-          <p><b>${req.user.name}</b> rescheduled appointment.</p>
-          <p>New Date: ${date}</p>
-          <p>New Time: ${timeSlot}</p>
-        `,
-      });
-    }
+if (adminEmail && process.env.EMAIL_FROM_ADDRESS) {
+  try {
+    await transporter.sendMail({
+      from: `"${req.user.name}" <${process.env.EMAIL_FROM_ADDRESS}>`,
+      replyTo: req.user.email,
+      to: adminEmail,
+      subject: "Appointment Rescheduled 🔁",
+      html: `
+        <p><b>${req.user.name}</b> rescheduled appointment.</p>
+        <p>New Date: ${date}</p>
+        <p>New Time: ${timeSlot}</p>
+      `,
+    });
+  } catch (mailError) {
+    console.error("EMAIL ERROR (RESCHEDULE):", mailError.message);
+  }
+}
+
     /* ================= EMAIL END ================= */
 
     res.json({
