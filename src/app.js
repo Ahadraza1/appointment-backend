@@ -50,7 +50,7 @@ app.get("/", (req, res) => {
 });
 
 /* ---------------- ROUTES ---------------- */
-app.use("api/auth", authRoutes);
+app.use("/api/auth", authRoutes);
 app.use("/api/services", serviceRoutes);
 app.use("/api/availability", availabilityRoutes);
 app.use("/api/appointments", appointmentRoutes);
