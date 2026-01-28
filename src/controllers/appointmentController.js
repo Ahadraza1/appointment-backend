@@ -389,26 +389,38 @@ export const updateAppointmentStatus = async (req, res) => {
       return res.status(404).json({ message: "Appointment not found" });
     }
 
-    /* ================= EMAIL NOTIFICATION ================= */
-    await transporter.sendMail({
-      from: `"${process.env.EMAIL_FROM_NAME}" <${process.env.EMAIL_FROM_ADDRESS}>`,
-      to: updated.userId.email,
-      subject:
-        status === "approved"
-          ? "Appointment Approved ✅"
-          : "Appointment Rejected ❌",
-      html: `
-        <p>Hello ${updated.userId.name},</p>
-        <p>Your appointment for <b>${updated.serviceId.name}</b> on 
-        <b>${updated.date}</b> at <b>${updated.timeSlot}</b> has been 
-        <b>${status.toUpperCase()}</b>.</p>
-        ${
-          status === "rejected"
-            ? `<p><b>Reason:</b> ${rejectionReason || "Not specified"}</p>`
-            : ""
-        }
-      `,
-    });
+    /* ================= EMAIL (SAFE) ================= */
+    try {
+      if (
+        updated.userId?.email &&
+        process.env.EMAIL_FROM_ADDRESS &&
+        process.env.EMAIL_FROM_NAME
+      ) {
+        await transporter.sendMail({
+          from: `"${process.env.EMAIL_FROM_NAME}" <${process.env.EMAIL_FROM_ADDRESS}>`,
+          to: updated.userId.email,
+          subject:
+            status === "approved"
+              ? "Appointment Approved ✅"
+              : "Appointment Rejected ❌",
+          html: `
+            <p>Hello ${updated.userId.name},</p>
+            <p>Your appointment for <b>${updated.serviceId?.name || "Service"}</b> 
+            on <b>${updated.date}</b> at <b>${updated.timeSlot}</b> has been 
+            <b>${status.toUpperCase()}</b>.</p>
+            ${
+              status === "rejected"
+                ? `<p><b>Reason:</b> ${rejectionReason || "Not specified"}</p>`
+                : ""
+            }
+          `,
+        });
+      }
+    } catch (emailError) {
+      console.error("EMAIL ERROR (STATUS UPDATE):", emailError.message);
+      // ❗ email fail hone par API fail nahi hogi
+    }
+
     /* ================= EMAIL END ================= */
 
     res.json(updated);
