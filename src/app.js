@@ -39,8 +39,8 @@ app.use(
   }),
 );
 
-// IMPORTANT for preflight
-app.options("*", cors());
+// // IMPORTANT for preflight
+// app.options("/*", cors());
  // ✅ Node 24 safe preflight handler
 // app.use((req, res, next) => {
 //   if (req.method === "OPTIONS") {
