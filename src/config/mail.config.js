@@ -25,6 +25,14 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+transporter.verify((err, success) => {
+  if (err) {
+    console.error("❌ SMTP VERIFY FAILED:", err.message);
+  } else {
+    console.log("✅ SMTP READY – Emails can be sent");
+  }
+});
+
 /* ================================
    📧 COMMON SEND MAIL FUNCTION
 ================================ */
@@ -101,12 +109,6 @@ export const sendCustomerStatusEmail = async (email, status, data) => {
   });
 };
 
-transporter.verify((err, success) => {
-  if (err) {
-    console.error("❌ SMTP VERIFY FAILED:", err.message);
-  } else {
-    console.log("✅ SMTP READY – Emails can be sent");
-  }
-});
+
 
 export default transporter;
