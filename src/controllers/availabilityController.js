@@ -52,7 +52,7 @@ export const getTimeSlots = async (req, res) => {
 
     // Day check
     const day = new Date(date).toLocaleDateString("en-US", {
-      weekday: "long"
+      weekday: "short",
     });
 
     if (!availability.workingDays.includes(day)) {
