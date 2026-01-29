@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import transporter from "../config/mail.config.js";
+// import transporter from "../config/mail.config.js";
 import Appointment from "../models/Appointment.js";
 import Service from "../models/Service.js";
 import Availability from "../models/Availability.js";
