@@ -155,10 +155,10 @@ export const bookAppointment = async (req, res) => {
     /* ================= ADMIN EMAIL NOTIFICATION ================= */
     const adminEmail = process.env.ADMIN_EMAIL;
 
-    if (adminEmail && process.env.EMAIL_FROM_ADDRESS) {
+    if (adminEmail && process.env.EMAIL_USER) {
       try {
         await transporter.sendMail({
-          from: `"${req.user.name}" <${process.env.EMAIL_FROM_ADDRESS}>`,
+          from: `"Appointment System" <${process.env.EMAIL_USER}>`,
           replyTo: req.user.email,
           to: adminEmail,
           subject: "New Appointment Booked",
@@ -171,7 +171,30 @@ export const bookAppointment = async (req, res) => {
       `,
         });
       } catch (mailError) {
-        console.error("EMAIL ERROR (BOOK APPOINTMENT):", mailError.message);
+        console.error(
+          "EMAIL ERROR (BOOK APPOINTMENT - ADMIN):",
+          mailError.message,
+        );
+      }
+    }
+
+    /* ================= CUSTOMER EMAIL (BOOKING CONFIRMATION) ================= */
+    if (req.user.email && process.env.EMAIL_USER) {
+      try {
+        await transporter.sendMail({
+          from: `"Appointment System" <${process.env.EMAIL_USER}>`,
+          to: req.user.email,
+          subject: "📅 Appointment Booked Successfully",
+          html: `
+        <p>Hello ${req.user.name},</p>
+        <p>Your appointment has been <b>successfully booked</b>.</p>
+        <p><b>Date:</b> ${date}</p>
+        <p><b>Time:</b> ${timeSlot}</p>
+        <p>Status: <b>Pending approval</b></p>
+      `,
+        });
+      } catch (err) {
+        console.error("EMAIL ERROR (CUSTOMER BOOKING):", err.message);
       }
     }
 
@@ -391,29 +414,25 @@ export const updateAppointmentStatus = async (req, res) => {
 
     /* ================= EMAIL (SAFE) ================= */
     try {
-      if (
-        updated.userId?.email &&
-        process.env.EMAIL_FROM_ADDRESS &&
-        process.env.EMAIL_FROM_NAME
-      ) {
+      if (updated.userId?.email && process.env.EMAIL_USER) {
         await transporter.sendMail({
-          from: `"${process.env.EMAIL_FROM_NAME}" <${process.env.EMAIL_FROM_ADDRESS}>`,
+          from: `"Appointment System" <${process.env.EMAIL_USER}>`,
           to: updated.userId.email,
           subject:
             status === "approved"
               ? "Appointment Approved ✅"
               : "Appointment Rejected ❌",
           html: `
-            <p>Hello ${updated.userId.name},</p>
-            <p>Your appointment for <b>${updated.serviceId?.name || "Service"}</b> 
-            on <b>${updated.date}</b> at <b>${updated.timeSlot}</b> has been 
-            <b>${status.toUpperCase()}</b>.</p>
-            ${
-              status === "rejected"
-                ? `<p><b>Reason:</b> ${rejectionReason || "Not specified"}</p>`
-                : ""
-            }
-          `,
+      <p>Hello ${updated.userId.name},</p>
+      <p>Your appointment for <b>${updated.serviceId?.name || "Service"}</b> 
+      on <b>${updated.date}</b> at <b>${updated.timeSlot}</b> has been 
+      <b>${status.toUpperCase()}</b>.</p>
+      ${
+        status === "rejected"
+          ? `<p><b>Reason:</b> ${rejectionReason || "Not specified"}</p>`
+          : ""
+      }
+    `,
         });
       }
     } catch (emailError) {
@@ -467,10 +486,10 @@ export const cancelAppointment = async (req, res) => {
     /* ================= ADMIN EMAIL (CANCEL) ================= */
     const adminEmail = process.env.ADMIN_EMAIL;
 
-    if (adminEmail && process.env.EMAIL_FROM_ADDRESS) {
+    if (adminEmail && process.env.EMAIL_USER) {
       try {
         await transporter.sendMail({
-          from: `"${req.user.name}" <${process.env.EMAIL_FROM_ADDRESS}>`,
+          from: `"${req.user.name}" <${process.env.EMAIL_USER}>`,
           replyTo: req.user.email,
           to: adminEmail,
           subject: "Appointment Cancelled ❌",
@@ -544,7 +563,7 @@ export const rescheduleAppointment = async (req, res) => {
     /* ================= ADMIN EMAIL (RESCHEDULE) ================= */
     const adminEmail = process.env.ADMIN_EMAIL;
 
-    if (adminEmail && process.env.EMAIL_FROM_ADDRESS) {
+    if (adminEmail && process.env.EMAIL_USER) {
       try {
         await transporter.sendMail({
           from: `"${req.user.name}" <${process.env.EMAIL_FROM_ADDRESS}>`,
