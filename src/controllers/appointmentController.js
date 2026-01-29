@@ -23,17 +23,13 @@ export const bookAppointment = async (req, res) => {
       return res.status(400).json({ message: "Invalid serviceId" });
     }
 
-    /* ================= LOAD SERVICE ================= */
     const service = await Service.findById(serviceId);
-
     if (!service || service.status !== "active") {
       return res.status(400).json({ message: "Service not available" });
     }
 
-    /* ================= PLAN & BOOKING LIMIT CHECK ================= */
     const user = await User.findById(req.user._id);
 
-    // ❌ Subscription expired
     if (user.subscriptionStatus === "expired") {
       return res.status(403).json({
         message: "Your plan has expired. Please upgrade your plan to continue.",
@@ -41,7 +37,6 @@ export const bookAppointment = async (req, res) => {
       });
     }
 
-    // ❌ Free plan booking limit over
     if (
       user.planType === "free" &&
       user.bookingLimit !== Infinity &&
@@ -54,21 +49,13 @@ export const bookAppointment = async (req, res) => {
       });
     }
 
-    /* ================= LOAD GLOBAL AVAILABILITY ================= */
     const availability = await Availability.findOne();
-
-    if (!availability) {
-      return res.status(400).json({ message: "Availability not configured" });
-    }
-
-    if (!availability.bookingOpen) {
+    if (!availability || !availability.bookingOpen) {
       return res.status(400).json({ message: "Booking is currently closed" });
     }
 
-    /* ================= PICK RULE SOURCE ================= */
     const rules = service.availabilityEnabled ? service : availability;
 
-    /* ================= DAY CHECK ================= */
     const bookingDate = new Date(date);
     const dayName = bookingDate.toLocaleDateString("en-US", {
       weekday: "short",
@@ -80,14 +67,12 @@ export const bookAppointment = async (req, res) => {
         .json({ message: "Bookings are closed on this day" });
     }
 
-    /* ================= HOLIDAY CHECK ================= */
     if (rules.holidays?.includes(date)) {
       return res
         .status(400)
         .json({ message: "Bookings are closed on holidays" });
     }
 
-    /* ================= WORKING HOURS CHECK ================= */
     const slotMinutes = timeToMinutes(timeSlot);
 
     if (rules.startTime && rules.endTime) {
@@ -112,16 +97,6 @@ export const bookAppointment = async (req, res) => {
       }
     }
 
-    /* ================= BREAK TIME CHECK ================= */
-    for (const brk of rules.breaks || []) {
-      if (timeSlot >= brk.start && timeSlot < brk.end) {
-        return res.status(400).json({
-          message: "Booking not allowed during break time",
-        });
-      }
-    }
-
-    /* ================= CONFLICT CHECK ================= */
     const conflict = await Appointment.findOne({
       serviceId,
       date,
@@ -135,7 +110,6 @@ export const bookAppointment = async (req, res) => {
         .json({ message: "This time slot is already booked" });
     }
 
-    /* ================= CREATE APPOINTMENT ================= */
     const appointment = await Appointment.create({
       userId: req.user._id,
       serviceId,
@@ -145,75 +119,51 @@ export const bookAppointment = async (req, res) => {
       status: "pending",
     });
 
-    /* ================= INCREMENT BOOKING COUNT ================= */
-    await User.findByIdAndUpdate(
-      req.user._id,
-      { $inc: { bookingUsed: 1 } },
-      { new: true },
-    );
+    await User.findByIdAndUpdate(req.user._id, {
+      $inc: { bookingUsed: 1 },
+    });
 
-    /* ================= ADMIN EMAIL NOTIFICATION ================= */
-    const adminEmail = process.env.ADMIN_EMAIL;
+    /* ✅ RESPOND IMMEDIATELY (FIX) */
+    res.status(201).json({ appointment });
 
-    if (adminEmail && process.env.EMAIL_USER) {
+    /* ================= EMAILS (BACKGROUND – NON BLOCKING) ================= */
+    setImmediate(() => {
       try {
-        transporter.sendMail({
-          from: `"Appointment System" <${process.env.EMAIL_USER}>`,
-          replyTo: req.user.email,
-          to: adminEmail,
-          subject: "New Appointment Booked",
-          html: `
-        <h3>New Appointment</h3>
-        <p><b>Customer:</b> ${req.user.name}</p>
-        <p><b>Email:</b> ${req.user.email}</p>
-        <p><b>Date:</b> ${date}</p>
-        <p><b>Time:</b> ${timeSlot}</p>
-      `,
-        });
-      } catch (mailError) {
-        console.error(
-          "EMAIL ERROR (BOOK APPOINTMENT - ADMIN):",
-          mailError.message,
-        );
+        const adminEmail = process.env.ADMIN_EMAIL;
+
+        if (adminEmail && process.env.EMAIL_USER) {
+          transporter.sendMail({
+            from: `"Appointment System" <${process.env.EMAIL_USER}>`,
+            replyTo: req.user.email,
+            to: adminEmail,
+            subject: "New Appointment Booked",
+            html: `
+              <h3>New Appointment</h3>
+              <p><b>Customer:</b> ${req.user.name}</p>
+              <p><b>Email:</b> ${req.user.email}</p>
+              <p><b>Date:</b> ${date}</p>
+              <p><b>Time:</b> ${timeSlot}</p>
+            `,
+          });
+        }
+
+        if (req.user.email && process.env.EMAIL_USER) {
+          transporter.sendMail({
+            from: `"Appointment System" <${process.env.EMAIL_USER}>`,
+            to: req.user.email,
+            subject: "📅 Appointment Booked Successfully",
+            html: `
+              <p>Hello ${req.user.name},</p>
+              <p>Your appointment has been <b>successfully booked</b>.</p>
+              <p><b>Date:</b> ${date}</p>
+              <p><b>Time:</b> ${timeSlot}</p>
+              <p>Status: <b>Pending approval</b></p>
+            `,
+          });
+        }
+      } catch (e) {
+        console.error("EMAIL BACKGROUND ERROR:", e.message);
       }
-    }
-
-    /* ================= CUSTOMER EMAIL (BOOKING CONFIRMATION) ================= */
-    if (req.user.email && process.env.EMAIL_USER) {
-      try {
-        await transporter.sendMail({
-          from: `"Appointment System" <${process.env.EMAIL_USER}>`,
-          to: req.user.email,
-          subject: "📅 Appointment Booked Successfully",
-          html: `
-        <p>Hello ${req.user.name},</p>
-        <p>Your appointment has been <b>successfully booked</b>.</p>
-        <p><b>Date:</b> ${date}</p>
-        <p><b>Time:</b> ${timeSlot}</p>
-        <p>Status: <b>Pending approval</b></p>
-      `,
-        });
-      } catch (err) {
-        console.error("EMAIL ERROR (CUSTOMER BOOKING):", err.message);
-      }
-    }
-
-    /* ================= EMAIL END ================= */
-
-    const updatedUser = await User.findById(req.user._id);
-
-    res.status(201).json({
-      appointment,
-      user: {
-        _id: updatedUser._id,
-        name: updatedUser.name,
-        email: updatedUser.email,
-        role: updatedUser.role,
-        profilePhoto: updatedUser.profilePhoto,
-        bookingUsed: updatedUser.bookingUsed,
-        bookingLimit: updatedUser.bookingLimit,
-        planType: updatedUser.planType,
-      },
     });
   } catch (error) {
     console.error("BOOK APPOINTMENT ERROR:", error);

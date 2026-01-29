@@ -29,14 +29,21 @@ app.use(
   cors({
     origin: [
       "http://localhost:3000",
-      // "http://localhost:3001",
       "https://appointment-frontend-livid-xi.vercel.app",
     ],
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   }),
 );
+
+// ✅ Node 24 safe preflight handler
+app.use((req, res, next) => {
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(204);
+  }
+  next();
+});
 
 app.use(express.json()); // parse JSON body
 app.use(express.urlencoded({ extended: true }));
