@@ -157,7 +157,7 @@ export const bookAppointment = async (req, res) => {
 
     if (adminEmail && process.env.EMAIL_USER) {
       try {
-        await transporter.sendMail({
+        transporter.sendMail({
           from: `"Appointment System" <${process.env.EMAIL_USER}>`,
           replyTo: req.user.email,
           to: adminEmail,
@@ -415,7 +415,7 @@ export const updateAppointmentStatus = async (req, res) => {
     /* ================= EMAIL (SAFE) ================= */
     try {
       if (updated.userId?.email && process.env.EMAIL_USER) {
-        await transporter.sendMail({
+        transporter.sendMail({
           from: `"Appointment System" <${process.env.EMAIL_USER}>`,
           to: updated.userId.email,
           subject:
@@ -488,7 +488,7 @@ export const cancelAppointment = async (req, res) => {
 
     if (adminEmail && process.env.EMAIL_USER) {
       try {
-        await transporter.sendMail({
+        transporter.sendMail({
           from: `"${req.user.name}" <${process.env.EMAIL_USER}>`,
           replyTo: req.user.email,
           to: adminEmail,
@@ -565,8 +565,8 @@ export const rescheduleAppointment = async (req, res) => {
 
     if (adminEmail && process.env.EMAIL_USER) {
       try {
-        await transporter.sendMail({
-          from: `"${req.user.name}" <${process.env.EMAIL_FROM_ADDRESS}>`,
+        transporter.sendMail({
+          from: `"${req.user.name}" <${process.env.EMAIL_USER}>`,
           replyTo: req.user.email,
           to: adminEmail,
           subject: "Appointment Rescheduled 🔁",
