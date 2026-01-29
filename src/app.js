@@ -37,16 +37,16 @@ app.use(
   }),
 );
 
-app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
+// app.use(cors(corsOptions));
+// app.options("*", cors(corsOptions));
 
 // ✅ Node 24 safe preflight handler
-// app.use((req, res, next) => {
-//   if (req.method === "OPTIONS") {
-//     return res.sendStatus(204);
-//   }
-//   next();
-// });
+app.use((req, res, next) => {
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(204);
+  }
+  next();
+});
 
 app.use(express.json()); // parse JSON body
 app.use(express.urlencoded({ extended: true }));
