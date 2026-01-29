@@ -25,28 +25,30 @@ const __dirname = path.dirname(__filename);
 // Static folders
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
+import cors from "cors";
+
 app.use(
   cors({
     origin: [
       "http://localhost:3000",
+      "http://localhost:3001",
       "https://appointment-frontend-livid-xi.vercel.app",
     ],
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );
 
-// app.use(cors(corsOptions));
-// app.options("*", cors(corsOptions));
-
-// ✅ Node 24 safe preflight handler
-app.use((req, res, next) => {
-  if (req.method === "OPTIONS") {
-    return res.sendStatus(204);
-  }
-  next();
-});
+// IMPORTANT for preflight
+app.options("*", cors());
+ // ✅ Node 24 safe preflight handler
+// app.use((req, res, next) => {
+//   if (req.method === "OPTIONS") {
+//     return res.sendStatus(204);
+//   }
+//   next();
+// });
 
 app.use(express.json()); // parse JSON body
 app.use(express.urlencoded({ extended: true }));
