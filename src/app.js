@@ -25,7 +25,6 @@ const __dirname = path.dirname(__filename);
 // Static folders
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
-import cors from "cors";
 
 app.use(
   cors({
