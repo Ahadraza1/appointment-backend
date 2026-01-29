@@ -21,24 +21,22 @@ const app = express();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const corsOptions = {
-  origin: [
-    "http://localhost:3000",
-    // "http://localhost:3001",
-    "https://appointment-frontend-livid-xi.vercel.app",
-  ],
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: true,
-};
-
 
 // Static folders
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
-app.use(cors(corsOptions));
-app.options("*", cors(corsOptions)); // 🔥 THIS IS THE FIX
-
+app.use(
+  cors({
+    origin: [
+      "http://localhost:3000",
+      // "http://localhost:3001",
+      "https://appointment-frontend-livid-xi.vercel.app",
+    ],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+  }),
+);
 
 app.use(express.json()); // parse JSON body
 app.use(express.urlencoded({ extended: true }));
