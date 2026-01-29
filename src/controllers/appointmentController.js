@@ -71,7 +71,7 @@ export const bookAppointment = async (req, res) => {
     /* ================= DAY CHECK ================= */
     const bookingDate = new Date(date);
     const dayName = bookingDate.toLocaleDateString("en-US", {
-      weekday: "long",
+      weekday: "short",
     });
 
     if (rules.workingDays?.length && !rules.workingDays.includes(dayName)) {
