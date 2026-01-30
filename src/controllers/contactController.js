@@ -15,31 +15,64 @@ export const sendContactMail = async (req, res) => {
       });
     }
 
-    // 🔥 2. Send email to ADMIN PANEL contact email
-    await transporter.sendMail({
-      from: `"Appointment System" <${process.env.EMAIL_USER}>`,
-      to: settings.contactEmail, // ✅ ADMIN PANEL EMAIL
-      replyTo: email, // company reply → customer
-      subject: `New Contact Message from ${name}`,
-      html: `
-        <h3>New Contact Message</h3>
-        <p><b>Name:</b> ${name}</p>
-        <p><b>Email:</b> ${email}</p>
-        <p><b>Message:</b></p>
-        <p>${message}</p>
-      `,
-    });
-
+    // 🔥 2. SEND RESPONSE IMMEDIATELY (VERY IMPORTANT)
     res.status(200).json({
       success: true,
-      message: "Message sent successfully",
+      message: "Message received successfully",
     });
-  } catch (error) {
-    console.error("❌ CONTACT EMAIL ERROR FULL:", error);
 
-    res.status(500).json({
-      success: false,
-      message: error.message || "Failed to send message",
-    });
+    /* ===============================
+       🔥 BACKGROUND EMAIL TASKS
+       (DO NOT AWAIT)
+    ================================ */
+
+    // 📩 Admin email
+    transporter
+      .sendMail({
+        from: `"Appointment System" <${process.env.EMAIL_USER}>`,
+        to: settings.contactEmail,
+        replyTo: email,
+        subject: `New Contact Message from ${name}`,
+        html: `
+          <h3>New Contact Message</h3>
+          <p><b>Name:</b> ${name}</p>
+          <p><b>Email:</b> ${email}</p>
+          <p><b>Message:</b></p>
+          <p>${message}</p>
+        `,
+      })
+      .catch((err) => {
+        console.error("❌ ADMIN CONTACT MAIL ERROR:", err);
+      });
+
+    // 📩 Customer auto-reply
+    transporter
+      .sendMail({
+        from: `"Appointment System" <${process.env.EMAIL_USER}>`,
+        to: email,
+        subject: "We received your message",
+        html: `
+          <p>Hello ${name},</p>
+          <p>Thank you for contacting us. We have received your message and will get back to you shortly.</p>
+          <br/>
+          <p><b>Your message:</b></p>
+          <p>${message}</p>
+          <br/>
+          <p>Regards,<br/>Appointment System Team</p>
+        `,
+      })
+      .catch((err) => {
+        console.error("❌ CUSTOMER AUTO-REPLY ERROR:", err);
+      });
+  } catch (error) {
+    console.error("❌ CONTACT CONTROLLER ERROR:", error);
+
+    // ⚠️ safety fallback (rare)
+    if (!res.headersSent) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to process contact request",
+      });
+    }
   }
 };
