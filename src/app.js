@@ -76,7 +76,7 @@ app.use("/api/admin", adminRoutes);
 /* ---------------- PAYMENT & SUBSCRIPTION ROUTES ---------------- */
 app.use("/api/payment", paymentRoutes);
 app.use("/api/subscription", subscriptionRoutes);
-app.use("/api", invoiceRoutes);
+app.use("/api/invoice", invoiceRoutes);
 
 /* ---------------- CONTACT ROUTES ---------------- */
 app.use("/api", contactRoutes);
