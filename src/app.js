@@ -16,7 +16,7 @@ import adminRoutes from "./routes/AdminRoutes.js";
 import contactRoutes from "./routes/contactRoutes.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
 import subscriptionRoutes from "./routes/subscriptionRoutes.js";
-
+import invoiceRoutes from "./routes/invoiceRoutes.js";
 const app = express();
 
 const __filename = fileURLToPath(import.meta.url);
@@ -76,6 +76,7 @@ app.use("/api/admin", adminRoutes);
 /* ---------------- PAYMENT & SUBSCRIPTION ROUTES ---------------- */
 app.use("/api/payment", paymentRoutes);
 app.use("/api/subscription", subscriptionRoutes);
+app.use("/api", invoiceRoutes);
 
 /* ---------------- CONTACT ROUTES ---------------- */
 app.use("/api", contactRoutes);
