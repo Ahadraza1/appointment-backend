@@ -3,6 +3,10 @@ import { activateSubscription } from "../services/subscriptionService.js";
 import paypalClient from "../config/paypal.js";
 import paypal from "@paypal/checkout-server-sdk";
 
+// ✅ INVOICE IMPORTS (ADDED)
+import generateInvoiceNumber from "../utils/generateInvoiceNumber.js";
+import generateInvoicePDF from "../utils/generateInvoicePDF.js";
+
 /**
  * @desc    Handle payment success (manual / non-gateway)
  * @route   POST /api/payment/success
@@ -37,12 +41,34 @@ export const paymentSuccessController = async (req, res) => {
     payment.subscriptionId = subscription._id;
     await payment.save();
 
+    // ================= INVOICE (LIVE SAFE – ADDED) =================
+    let invoiceNumber = null;
+    try {
+      const invoiceData = {
+        invoiceNumber: generateInvoiceNumber(),
+        userId,
+        plan: planType,
+        billingCycle: planType,
+        amount,
+        transactionId: payment._id.toString(),
+        status: "Paid",
+        issueDate: new Date(),
+      };
+
+      await generateInvoicePDF(invoiceData);
+      invoiceNumber = invoiceData.invoiceNumber;
+    } catch (err) {
+      console.error("Invoice generation failed (manual):", err);
+    }
+    // ===============================================================
+
     return res.status(200).json({
       success: true,
       message: "Payment successful and subscription activated",
       data: {
         paymentId: payment._id,
         subscriptionId: subscription._id,
+        invoiceNumber, // ✅ ADDED (safe)
       },
     });
   } catch (error) {
@@ -148,7 +174,6 @@ export const capturePaypalPaymentController = async (req, res) => {
 
     const capture = await paypalClient.execute(request);
 
-    // 🔍 IMPORTANT: PayPal status check
     if (capture.result.status !== "COMPLETED") {
       return res.status(400).json({
         success: false,
@@ -157,7 +182,6 @@ export const capturePaypalPaymentController = async (req, res) => {
       });
     }
 
-    // ✅ Payment success
     const payment = await Payment.create({
       userId,
       planType,
@@ -175,9 +199,31 @@ export const capturePaypalPaymentController = async (req, res) => {
     payment.subscriptionId = subscription._id;
     await payment.save();
 
+    // ================= INVOICE (LIVE SAFE – ADDED) =================
+    let invoiceNumber = null;
+    try {
+      const invoiceData = {
+        invoiceNumber: generateInvoiceNumber(),
+        userId,
+        plan: planType,
+        billingCycle: planType,
+        amount,
+        transactionId: capture.result.id,
+        status: "Paid",
+        issueDate: new Date(),
+      };
+
+      await generateInvoicePDF(invoiceData);
+      invoiceNumber = invoiceData.invoiceNumber;
+    } catch (err) {
+      console.error("Invoice generation failed (paypal):", err);
+    }
+    // ===============================================================
+
     return res.status(200).json({
       success: true,
       message: "PayPal payment captured successfully",
+      invoiceNumber, // ✅ ADDED (safe)
     });
   } catch (error) {
     console.error("PAYPAL CAPTURE ERROR 👉", error);
