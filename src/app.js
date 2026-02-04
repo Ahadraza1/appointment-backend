@@ -17,6 +17,10 @@ import contactRoutes from "./routes/contactRoutes.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
 import subscriptionRoutes from "./routes/subscriptionRoutes.js";
 import invoiceRoutes from "./routes/invoiceRoutes.js";
+
+/* 🔹 NEW: SUPER ADMIN ROUTES */
+import superAdminRoutes from "./routes/superAdminRoutes.js";
+
 const app = express();
 
 const __filename = fileURLToPath(import.meta.url);
@@ -24,7 +28,6 @@ const __dirname = path.dirname(__filename);
 
 // Static folders
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
-
 
 app.use(
   cors({
@@ -39,17 +42,7 @@ app.use(
   }),
 );
 
-// // IMPORTANT for preflight
-// app.options("/*", cors());
- // ✅ Node 24 safe preflight handler
-// app.use((req, res, next) => {
-//   if (req.method === "OPTIONS") {
-//     return res.sendStatus(204);
-//   }
-//   next();
-// });
-
-app.use(express.json()); // parse JSON body
+app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Root health check route
@@ -72,6 +65,9 @@ app.use("/api/users", userRoutes);
 
 /* ---------------- ADMIN ROUTES ---------------- */
 app.use("/api/admin", adminRoutes);
+
+/* 🔹 SUPER ADMIN ROUTES */
+app.use("/api/superadmin", superAdminRoutes);
 
 /* ---------------- PAYMENT & SUBSCRIPTION ROUTES ---------------- */
 app.use("/api/payment", paymentRoutes);
