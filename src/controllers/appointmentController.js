@@ -202,6 +202,7 @@ export const getMyAppointments = async (req, res) => {
   }
 };
 
+
 /* ================= GET ALL APPOINTMENTS (ADMIN) ================= */
 export const getAllAppointments = async (req, res) => {
   try {
@@ -233,13 +234,21 @@ export const getAllAppointments = async (req, res) => {
       })
       .populate({
         path: "serviceId",
-        select: "name price duration",
+        select: "name price duration companyId",
         match: regex ? { name: regex } : {},
       })
-      // newest first
       .sort({ date: -1, createdAt: -1 });
 
-    // ✅ IMPORTANT: remove non-matching populated docs
+    /* 🔒 COMPANY ISOLATION (ADMIN ONLY) */
+    if (req.user.role === "admin") {
+      appointments = appointments.filter(
+        (appt) =>
+          appt.serviceId &&
+          String(appt.serviceId.companyId) === String(req.user.companyId),
+      );
+    }
+
+    // search cleanup
     if (search) {
       appointments = appointments.filter(
         (appt) => appt.userId || appt.serviceId,
@@ -262,7 +271,7 @@ export const getTodayAppointments = async (req, res) => {
     const endOfDay = new Date();
     endOfDay.setHours(23, 59, 59, 999);
 
-    const appointments = await Appointment.find({
+    let appointments = await Appointment.find({
       createdAt: {
         $gte: startOfDay,
         $lte: endOfDay,
@@ -275,10 +284,19 @@ export const getTodayAppointments = async (req, res) => {
       })
       .populate({
         path: "serviceId",
-        select: "name price duration",
+        select: "name price duration companyId",
         strictPopulate: false,
       })
       .sort({ date: -1, createdAt: -1 });
+
+    /* 🔒 COMPANY ISOLATION (ADMIN ONLY) */
+    if (req.user.role === "admin") {
+      appointments = appointments.filter(
+        (appt) =>
+          appt.serviceId &&
+          String(appt.serviceId.companyId) === String(req.user.companyId),
+      );
+    }
 
     res.json(appointments);
   } catch (error) {
@@ -302,17 +320,25 @@ export const getAppointmentDetails = async (req, res) => {
     const appointment = await Appointment.findById(id)
       .populate({
         path: "serviceId",
-        select: "name price duration",
-        strictPopulate: false, // 🔥 MAIN FIX
+        select: "name price duration companyId",
+        strictPopulate: false,
       })
       .populate({
         path: "userId",
         select: "name email",
-        strictPopulate: false, // 🔥 MAIN FIX
+        strictPopulate: false,
       });
 
     if (!appointment) {
       return res.status(404).json({ message: "Appointment not found" });
+    }
+
+    /* 🔒 COMPANY ISOLATION (ADMIN ONLY) */
+    if (
+      req.user.role === "admin" &&
+      String(appointment.serviceId?.companyId) !== String(req.user.companyId)
+    ) {
+      return res.status(403).json({ message: "Access denied" });
     }
 
     res.json(appointment);
@@ -335,32 +361,28 @@ export const updateAppointmentStatus = async (req, res) => {
       return res.status(400).json({ message: "Invalid status value" });
     }
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: "Invalid appointment id" });
-    }
+    const appointment = await Appointment.findById(id).populate({
+      path: "serviceId",
+      select: "companyId name",
+    });
 
-    const updated = await Appointment.findByIdAndUpdate(
-      id,
-      {
-        status,
-        rejectionReason: status === "rejected" ? rejectionReason || "" : "",
-      },
-      { new: true },
-    )
-      .populate({
-        path: "userId",
-        select: "name email",
-        strictPopulate: false,
-      })
-      .populate({
-        path: "serviceId",
-        select: "name",
-        strictPopulate: false,
-      });
-
-    if (!updated) {
+    if (!appointment) {
       return res.status(404).json({ message: "Appointment not found" });
     }
+
+    /* 🔒 COMPANY ISOLATION (ADMIN ONLY) */
+    if (
+      req.user.role === "admin" &&
+      String(appointment.serviceId.companyId) !== String(req.user.companyId)
+    ) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    appointment.status = status;
+    appointment.rejectionReason =
+      status === "rejected" ? rejectionReason || "" : "";
+
+    await appointment.save();
 
     /* ================= EMAIL (SAFE) ================= */
     try {

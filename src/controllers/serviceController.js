@@ -24,6 +24,7 @@ export const createService = async (req, res) => {
       duration,
       price,
       status: status || "active",
+      companyId: req.user?.companyId || null, // 🔒 isolation
     });
 
     res.status(201).json(service);
@@ -38,16 +39,12 @@ export const bulkCreateServices = async (req, res) => {
     const services = req.body;
 
     if (!Array.isArray(services) || services.length === 0) {
-      return res
-        .status(400)
-        .json({ message: "Array of services is required" });
+      return res.status(400).json({ message: "Array of services is required" });
     }
 
     const prepared = services.map((s, index) => {
       if (!s.name || !s.duration || !s.price) {
-        throw new Error(
-          `Invalid service at index ${index}`
-        );
+        throw new Error(`Invalid service at index ${index}`);
       }
 
       return {
@@ -56,6 +53,7 @@ export const bulkCreateServices = async (req, res) => {
         duration: s.duration,
         price: s.price,
         status: s.status || "active",
+        companyId: req.user?.companyId || null, // 🔒 isolation
       };
     });
 
@@ -77,19 +75,25 @@ export const getServices = async (req, res) => {
     const limit = Number(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    // ✅ DEFAULT: only active services for customers
-    const query = { status: "active" };
+    const query = {};
 
-    // ✅ Admin can still filter manually
+    // 🔹 customer: only active
+    if (req.user?.role === "customer" || !req.user) {
+      query.status = "active";
+    }
+
+    // 🔹 admin: only own company
+    if (req.user?.role === "admin") {
+      query.companyId = req.user.companyId;
+    }
+
+    // 🔹 optional status filter
     if (req.query.status && req.query.status !== "all") {
       query.status = req.query.status;
     }
 
     const [services, total] = await Promise.all([
-      Service.find(query)
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit),
+      Service.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit),
       Service.countDocuments(query),
     ]);
 
@@ -106,7 +110,6 @@ export const getServices = async (req, res) => {
   }
 };
 
-
 /* ================= UPDATE SERVICE (ADMIN) ================= */
 export const updateService = async (req, res) => {
   try {
@@ -121,9 +124,16 @@ export const updateService = async (req, res) => {
       return res.status(404).json({ message: "Service not found" });
     }
 
+    // 🔒 isolation
+    if (
+      req.user.role === "admin" &&
+      String(service.companyId) !== String(req.user.companyId)
+    ) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
     service.name = req.body.name ?? service.name;
-    service.description =
-      req.body.description ?? service.description;
+    service.description = req.body.description ?? service.description;
     service.duration = req.body.duration ?? service.duration;
     service.price = req.body.price ?? service.price;
     service.status = req.body.status ?? service.status;
@@ -149,6 +159,13 @@ export const deleteService = async (req, res) => {
       return res.status(404).json({ message: "Service not found" });
     }
 
+    if (
+      req.user.role === "admin" &&
+      String(service.companyId) !== String(req.user.companyId)
+    ) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
     await service.deleteOne();
     res.status(200).json({ message: "Service deleted successfully" });
   } catch (error) {
@@ -170,8 +187,14 @@ export const toggleServiceStatus = async (req, res) => {
       return res.status(404).json({ message: "Service not found" });
     }
 
-    service.status =
-      service.status === "active" ? "inactive" : "active";
+    if (
+      req.user.role === "admin" &&
+      String(service.companyId) !== String(req.user.companyId)
+    ) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    service.status = service.status === "active" ? "inactive" : "active";
 
     await service.save();
     res.status(200).json(service);

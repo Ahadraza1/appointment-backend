@@ -5,6 +5,10 @@ import {
 } from "../middleware/authMiddleware.js";
 import {
   createCompanyWithAdmin,
+  getAllCompanies,
+  toggleCompanyStatus,
+  getCompanyAdmins,
+  getCompanyStats,
 } from "../controllers/superAdminController.js";
 
 const router = express.Router();
@@ -20,6 +24,50 @@ router.post(
   protect,
   superAdminOnly,
   createCompanyWithAdmin
+);
+
+/**
+ * @route   GET /api/superadmin/companies
+ * @desc    Get all companies (Super Admin only)
+ */
+router.get(
+  "/companies",
+  protect,
+  superAdminOnly,
+  getAllCompanies
+);
+
+/**
+ * @route   PATCH /api/superadmin/company/:id/status
+ * @desc    Enable / Disable company (Super Admin only)
+ */
+router.patch(
+  "/company/:id/status",
+  protect,
+  superAdminOnly,
+  toggleCompanyStatus
+);
+
+/**
+ * @route   GET /api/superadmin/company/:companyId/admins
+ * @desc    Get admins of a company (Super Admin only)
+ */
+router.get(
+  "/company/:companyId/admins",
+  protect,
+  superAdminOnly,
+  getCompanyAdmins
+);
+
+/**
+ * @route   GET /api/superadmin/company/:companyId/stats
+ * @desc    Get company stats (Super Admin only)
+ */
+router.get(
+  "/company/:companyId/stats",
+  protect,
+  superAdminOnly,
+  getCompanyStats
 );
 
 export default router;
