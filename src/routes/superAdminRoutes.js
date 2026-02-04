@@ -2,7 +2,7 @@ import express from "express";
 import {
   protect,
   superAdminOnly,
-} from "../middleware/authMiddleware.js";
+} from "../middlewares/authMiddleware.js";
 import {
   createCompanyWithAdmin,
   getAllCompanies,
