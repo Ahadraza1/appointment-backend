@@ -22,13 +22,21 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+
+    // 🔹 UPDATED: role now supports superadmin
     role: {
       type: String,
-      enum: ["admin", "customer"],
+      enum: ["superadmin", "admin", "customer"],
       default: "customer",
     },
 
-    
+    // 🔹 NEW: companyId (only for admin)
+    companyId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Company",
+      default: null, // superadmin & customers
+    },
+
     /* ================= SUBSCRIPTION FIELDS ================= */
     planType: {
       type: String,
@@ -57,8 +65,7 @@ const userSchema = new mongoose.Schema(
       default: 0,
     },
 
-
-    // ✅ ADD THESE (RESET PASSWORD SUPPORT)
+    // ✅ RESET PASSWORD SUPPORT
     resetPasswordToken: {
       type: String,
     },

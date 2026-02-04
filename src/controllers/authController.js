@@ -23,7 +23,7 @@ export const registerUser = async (req, res) => {
       name,
       email,
       phone,
-      password, // ← plain password
+      password,
       role,
     });
 
@@ -33,7 +33,8 @@ export const registerUser = async (req, res) => {
       email: user.email,
       role: user.role,
       profilePhoto: user.profilePhoto,
-      token: generateToken(user._id, user.role),
+      companyId: user.companyId || null,
+      token: generateToken(user._id, user.role, user.companyId || null),
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -62,13 +63,13 @@ export const loginUser = async (req, res) => {
       email: user.email,
       role: user.role,
       profilePhoto: user.profilePhoto,
-      token: generateToken(user._id, user.role),
+      companyId: user.companyId || null,
+      token: generateToken(user._id, user.role, user.companyId || null),
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
-
 
 /* ---------------- GET CURRENT USER (ME) ---------------- */
 export const getMe = async (req, res) => {

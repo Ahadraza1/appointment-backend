@@ -57,11 +57,20 @@ export const checkSubscription = (req, res, next) => {
 };
 
 /* ================= ADMIN ONLY ================= */
+/* admin + superadmin allowed */
 export const adminOnly = (req, res, next) => {
-  if (req.user?.role === "admin") {
+  if (req.user?.role === "admin" || req.user?.role === "superadmin") {
     return next();
   }
   return res.status(403).json({ message: "Admin access required" });
+};
+
+/* ================= SUPER ADMIN ONLY ================= */
+export const superAdminOnly = (req, res, next) => {
+  if (req.user?.role === "superadmin") {
+    return next();
+  }
+  return res.status(403).json({ message: "Super Admin access required" });
 };
 
 /* ================= CUSTOMER ONLY ================= */
