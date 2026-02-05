@@ -6,8 +6,13 @@ import Appointment from "../models/Appointment.js";
 /* ================= CREATE COMPANY + ADMIN ================= */
 export const createCompanyWithAdmin = async (req, res) => {
   try {
-    const { companyName, companyEmail, adminName, adminEmail, adminPassword } =
-      req.body;
+    const {
+      companyName,
+      companyEmail,
+      adminName,
+      adminEmail,
+      adminPassword,
+    } = req.body;
 
     if (
       !companyName ||
@@ -16,16 +21,16 @@ export const createCompanyWithAdmin = async (req, res) => {
       !adminEmail ||
       !adminPassword
     ) {
-      return res
-        .status(400)
-        .json({ message: "All fields are required" });
+      return res.status(400).json({
+        message: "All fields are required",
+      });
     }
 
     const adminExists = await User.findOne({ email: adminEmail });
     if (adminExists) {
-      return res
-        .status(400)
-        .json({ message: "Admin already exists with this email" });
+      return res.status(400).json({
+        message: "Admin already exists with this email",
+      });
     }
 
     const company = await Company.create({
@@ -116,7 +121,7 @@ export const getCompanyAdmins = async (req, res) => {
 
     const admins = await User.find({
       role: "admin",
-      companyId: companyId,
+      companyId,
     }).select("name email createdAt");
 
     res.status(200).json({
