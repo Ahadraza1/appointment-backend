@@ -6,6 +6,9 @@ import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
 
+/* 🔹 NEW: SUPER ADMIN ROUTES */
+import superAdminRoutes from "./routes/superAdminRoutes.js";
+
 import authRoutes from "./routes/authRoutes.js";
 import serviceRoutes from "./routes/serviceRoutes.js";
 import availabilityRoutes from "./routes/availabilityRoutes.js";
@@ -17,9 +20,6 @@ import contactRoutes from "./routes/contactRoutes.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
 import subscriptionRoutes from "./routes/subscriptionRoutes.js";
 import invoiceRoutes from "./routes/invoiceRoutes.js";
-
-/* 🔹 NEW: SUPER ADMIN ROUTES */
-import superAdminRoutes from "./routes/superAdminRoutes.js";
 
 const app = express();
 
@@ -55,9 +55,9 @@ app.get("/", (req, res) => {
 
 /* 🔹 SUPER ADMIN ROUTES */
 app.use("/api/superadmin", superAdminRoutes);
+app.use("/api/auth", authRoutes);
 
 /* ---------------- ROUTES ---------------- */
-app.use("/api/auth", authRoutes);
 app.use("/api/services", serviceRoutes);
 app.use("/api/availability", availabilityRoutes);
 app.use("/api/appointments", appointmentRoutes);
