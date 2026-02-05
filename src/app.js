@@ -42,7 +42,6 @@ app.use(
   }),
 );
 
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -53,6 +52,9 @@ app.get("/", (req, res) => {
     message: "Appointment Backend is running 🚀",
   });
 });
+
+/* 🔹 SUPER ADMIN ROUTES */
+app.use("/api/superadmin", superAdminRoutes);
 
 /* ---------------- ROUTES ---------------- */
 app.use("/api/auth", authRoutes);
@@ -66,9 +68,6 @@ app.use("/api/users", userRoutes);
 
 /* ---------------- ADMIN ROUTES ---------------- */
 app.use("/api/admin", adminRoutes);
-
-/* 🔹 SUPER ADMIN ROUTES */
-app.use("/api/superadmin", superAdminRoutes);
 
 /* ---------------- PAYMENT & SUBSCRIPTION ROUTES ---------------- */
 app.use("/api/payment", paymentRoutes);

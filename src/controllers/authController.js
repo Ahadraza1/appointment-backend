@@ -1,4 +1,5 @@
 import User from "../models/user.js";
+import Company from "../models/Company.js";
 import bcrypt from "bcryptjs";
 import generateToken from "../utils/generateToken.js";
 
@@ -12,13 +13,11 @@ export const registerUser = async (req, res) => {
       throw new Error("Please fill all required fields");
     }
 
-    // Check existing user
     const userExists = await User.findOne({ email });
     if (userExists) {
       return res.status(400).json({ message: "User already exists" });
     }
 
-    // ✅ DO NOT hash here (model will handle it)
     const user = await User.create({
       name,
       email,
@@ -47,7 +46,6 @@ export const loginUser = async (req, res) => {
     const { email, password } = req.body;
 
     const user = await User.findOne({ email });
-
     if (!user) {
       return res.status(401).json({ message: "Invalid email or password" });
     }
@@ -55,6 +53,18 @@ export const loginUser = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({ message: "Invalid email or password" });
+    }
+
+    /* 🔒 BLOCK ADMIN LOGIN IF COMPANY IS INACTIVE */
+    if (user.role === "admin" && user.companyId) {
+      const company = await Company.findById(user.companyId);
+
+      if (!company || company.status !== "active") {
+        return res.status(403).json({
+          message:
+            "Your company is inactive. Please contact Super Admin.",
+        });
+      }
     }
 
     res.json({
