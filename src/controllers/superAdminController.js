@@ -3,17 +3,12 @@ import User from "../models/user.js";
 import Service from "../models/Service.js";
 import Appointment from "../models/Appointment.js";
 
-/* ================= CREATE COMPANY + ADMIN ================= */
 export const createCompanyWithAdmin = async (req, res) => {
   try {
-    const {
-      companyName,
-      companyEmail,
-      adminName,
-      adminEmail,
-      adminPassword,
-    } = req.body;
+    const { companyName, companyEmail, adminName, adminEmail, adminPassword } =
+      req.body;
 
+    // 1️⃣ Required fields check
     if (
       !companyName ||
       !companyEmail ||
@@ -26,6 +21,7 @@ export const createCompanyWithAdmin = async (req, res) => {
       });
     }
 
+    // 2️⃣ Duplicate admin check
     const adminExists = await User.findOne({ email: adminEmail });
     if (adminExists) {
       return res.status(400).json({
@@ -33,11 +29,27 @@ export const createCompanyWithAdmin = async (req, res) => {
       });
     }
 
+    // 3️⃣ Duplicate company check (🔥 missing before)
+    const companyExists = await Company.findOne({ email: companyEmail });
+    if (companyExists) {
+      return res.status(400).json({
+        message: "Company already exists with this email",
+      });
+    }
+
+    // 4️⃣ Create company
     const company = await Company.create({
       name: companyName,
       email: companyEmail,
     });
 
+    if (!company) {
+      return res.status(500).json({
+        message: "Company creation failed",
+      });
+    }
+
+    // 5️⃣ Create admin
     const admin = await User.create({
       name: adminName,
       email: adminEmail,
@@ -46,7 +58,15 @@ export const createCompanyWithAdmin = async (req, res) => {
       companyId: company._id,
     });
 
-    res.status(201).json({
+    if (!admin) {
+      // rollback company if admin fails
+      await Company.findByIdAndDelete(company._id);
+      return res.status(500).json({
+        message: "Admin creation failed",
+      });
+    }
+
+    return res.status(201).json({
       success: true,
       message: "Company and Admin created successfully",
       company: {
@@ -60,7 +80,9 @@ export const createCompanyWithAdmin = async (req, res) => {
     });
   } catch (error) {
     console.error("Create company error:", error);
-    res.status(500).json({ message: error.message });
+    return res.status(500).json({
+      message: "Internal server error while creating company",
+    });
   }
 };
 
@@ -94,8 +116,7 @@ export const toggleCompanyStatus = async (req, res) => {
       return res.status(404).json({ message: "Company not found" });
     }
 
-    company.status =
-      company.status === "active" ? "inactive" : "active";
+    company.status = company.status === "active" ? "inactive" : "active";
 
     await company.save();
 
