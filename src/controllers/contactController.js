@@ -5,8 +5,14 @@ export const sendContactMail = async (req, res) => {
   try {
     const { name, email, message } = req.body;
 
+    // 🔒 company based settings
+    const filter =
+      req.user?.role === "admin"
+        ? { companyId: req.user.companyId }
+        : {};
+
     // 🔥 1. Get admin settings (company email)
-    const settings = await AdminSettings.findOne();
+    const settings = await AdminSettings.findOne(filter);
 
     if (!settings || !settings.contactEmail) {
       return res.status(400).json({
@@ -67,7 +73,6 @@ export const sendContactMail = async (req, res) => {
   } catch (error) {
     console.error("❌ CONTACT CONTROLLER ERROR:", error);
 
-    // ⚠️ safety fallback (rare)
     if (!res.headersSent) {
       return res.status(500).json({
         success: false,

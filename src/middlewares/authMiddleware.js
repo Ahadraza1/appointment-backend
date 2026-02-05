@@ -13,6 +13,7 @@ export const protect = async (req, res, next) => {
     const token = authHeader.split(" ")[1];
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    // decoded = { id, role, companyId }
 
     const user = await User.findById(decoded.id);
 
@@ -20,7 +21,13 @@ export const protect = async (req, res, next) => {
       return res.status(401).json({ message: "User not found" });
     }
 
-    req.user = user;
+    // 🔒 IMPORTANT: lock companyId from token
+    req.user = {
+      ...user.toObject(),
+      role: decoded.role,
+      companyId: decoded.companyId || null,
+    };
+
     next();
   } catch (error) {
     console.error("Auth error:", error);
@@ -32,7 +39,6 @@ export const protect = async (req, res, next) => {
 export const checkSubscription = (req, res, next) => {
   const user = req.user;
 
-  // ❌ expired plan
   if (user.subscriptionStatus === "expired") {
     return res.status(403).json({
       message: "Your plan has expired. Please upgrade to continue.",
@@ -40,7 +46,6 @@ export const checkSubscription = (req, res, next) => {
     });
   }
 
-  // ❌ free plan booking limit over
   if (
     user.planType === "free" &&
     user.bookingLimit !== Infinity &&
@@ -57,7 +62,6 @@ export const checkSubscription = (req, res, next) => {
 };
 
 /* ================= ADMIN ONLY ================= */
-/* admin + superadmin allowed */
 export const adminOnly = (req, res, next) => {
   if (req.user?.role === "admin" || req.user?.role === "superadmin") {
     return next();

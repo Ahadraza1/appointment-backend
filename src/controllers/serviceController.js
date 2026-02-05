@@ -12,6 +12,11 @@ export const createService = async (req, res) => {
       });
     }
 
+    // 🔒 ensure admin has company
+    if (req.user.role === "admin" && !req.user.companyId) {
+      return res.status(403).json({ message: "Admin company not assigned" });
+    }
+
     if (duration <= 0 || price <= 0) {
       return res.status(400).json({
         message: "Duration and price must be greater than 0",
@@ -24,7 +29,7 @@ export const createService = async (req, res) => {
       duration,
       price,
       status: status || "active",
-      companyId: req.user?.companyId || null, // 🔒 isolation
+      companyId: req.user?.companyId || null,
     });
 
     res.status(201).json(service);
@@ -33,6 +38,7 @@ export const createService = async (req, res) => {
   }
 };
 
+
 /* ================= BULK CREATE SERVICES (ADMIN) ================= */
 export const bulkCreateServices = async (req, res) => {
   try {
@@ -40,6 +46,11 @@ export const bulkCreateServices = async (req, res) => {
 
     if (!Array.isArray(services) || services.length === 0) {
       return res.status(400).json({ message: "Array of services is required" });
+    }
+
+    // 🔒 ensure admin has company
+    if (req.user.role === "admin" && !req.user.companyId) {
+      return res.status(403).json({ message: "Admin company not assigned" });
     }
 
     const prepared = services.map((s, index) => {
@@ -53,7 +64,7 @@ export const bulkCreateServices = async (req, res) => {
         duration: s.duration,
         price: s.price,
         status: s.status || "active",
-        companyId: req.user?.companyId || null, // 🔒 isolation
+        companyId: req.user.companyId,
       };
     });
 
@@ -67,6 +78,7 @@ export const bulkCreateServices = async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 };
+
 
 /* ================= GET SERVICES (PUBLIC + PAGINATION) ================= */
 export const getServices = async (req, res) => {

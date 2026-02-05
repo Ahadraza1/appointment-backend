@@ -202,8 +202,6 @@ export const getMyAppointments = async (req, res) => {
   }
 };
 
-
-/* ================= GET ALL APPOINTMENTS (ADMIN) ================= */
 export const getAllAppointments = async (req, res) => {
   try {
     const { userId, status, search, fromDate, toDate } = req.query;
@@ -226,6 +224,15 @@ export const getAllAppointments = async (req, res) => {
 
     const regex = search ? new RegExp(search, "i") : null;
 
+    // 🔒 ADMIN → company isolation at DB level
+    if (req.user.role === "admin") {
+      const services = await Service.find(
+        { companyId: req.user.companyId },
+        "_id",
+      );
+      filter.serviceId = { $in: services.map((s) => s._id) };
+    }
+
     let appointments = await Appointment.find(filter)
       .populate({
         path: "userId",
@@ -239,16 +246,6 @@ export const getAllAppointments = async (req, res) => {
       })
       .sort({ date: -1, createdAt: -1 });
 
-    /* 🔒 COMPANY ISOLATION (ADMIN ONLY) */
-    if (req.user.role === "admin") {
-      appointments = appointments.filter(
-        (appt) =>
-          appt.serviceId &&
-          String(appt.serviceId.companyId) === String(req.user.companyId),
-      );
-    }
-
-    // search cleanup
     if (search) {
       appointments = appointments.filter(
         (appt) => appt.userId || appt.serviceId,
@@ -262,7 +259,6 @@ export const getAllAppointments = async (req, res) => {
   }
 };
 
-/* ================= TODAY APPOINTMENT DETAILS (ADMIN) ================= */
 export const getTodayAppointments = async (req, res) => {
   try {
     const startOfDay = new Date();
@@ -271,12 +267,23 @@ export const getTodayAppointments = async (req, res) => {
     const endOfDay = new Date();
     endOfDay.setHours(23, 59, 59, 999);
 
-    let appointments = await Appointment.find({
+    const filter = {
       createdAt: {
         $gte: startOfDay,
         $lte: endOfDay,
       },
-    })
+    };
+
+    // 🔒 ADMIN → company isolation at DB level
+    if (req.user.role === "admin") {
+      const services = await Service.find(
+        { companyId: req.user.companyId },
+        "_id",
+      );
+      filter.serviceId = { $in: services.map((s) => s._id) };
+    }
+
+    const appointments = await Appointment.find(filter)
       .populate({
         path: "userId",
         select: "name email",
@@ -288,15 +295,6 @@ export const getTodayAppointments = async (req, res) => {
         strictPopulate: false,
       })
       .sort({ date: -1, createdAt: -1 });
-
-    /* 🔒 COMPANY ISOLATION (ADMIN ONLY) */
-    if (req.user.role === "admin") {
-      appointments = appointments.filter(
-        (appt) =>
-          appt.serviceId &&
-          String(appt.serviceId.companyId) === String(req.user.companyId),
-      );
-    }
 
     res.json(appointments);
   } catch (error) {

@@ -6,11 +6,17 @@ import generateToken from "../utils/generateToken.js";
 /* ---------------- REGISTER ---------------- */
 export const registerUser = async (req, res) => {
   try {
-    const { name, email, phone, password, role } = req.body;
+    const { name, email, phone, password, role, companyId } = req.body;
 
-    if (!name || !email || !phone || !password) {
-      res.status(400);
-      throw new Error("Please fill all required fields");
+    if (!name || !email || !phone || !password || !role) {
+      return res.status(400).json({ message: "Please fill all required fields" });
+    }
+
+    // 🔒 Admin must belong to a company
+    if (role === "admin" && !companyId) {
+      return res.status(400).json({
+        message: "Admin must be assigned to a company",
+      });
     }
 
     const userExists = await User.findOne({ email });
@@ -24,6 +30,7 @@ export const registerUser = async (req, res) => {
       phone,
       password,
       role,
+      companyId: role === "admin" ? companyId : null,
     });
 
     res.status(201).json({
@@ -55,14 +62,20 @@ export const loginUser = async (req, res) => {
       return res.status(401).json({ message: "Invalid email or password" });
     }
 
-    /* 🔒 BLOCK ADMIN LOGIN IF COMPANY IS INACTIVE */
+    // 🔒 Admin must have company
+    if (user.role === "admin" && !user.companyId) {
+      return res.status(403).json({
+        message: "Admin is not assigned to any company",
+      });
+    }
+
+    // 🔒 Block admin if company inactive
     if (user.role === "admin" && user.companyId) {
       const company = await Company.findById(user.companyId);
 
       if (!company || company.status !== "active") {
         return res.status(403).json({
-          message:
-            "Your company is inactive. Please contact Super Admin.",
+          message: "Your company is inactive. Please contact Super Admin.",
         });
       }
     }

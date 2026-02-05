@@ -2,10 +2,19 @@ import AdminSettings from "../models/AdminSettings.js";
 
 export const getSettings = async (req, res) => {
   try {
-    let settings = await AdminSettings.findOne();
+    const filter =
+      req.user.role === "admin"
+        ? { companyId: req.user.companyId }
+        : {};
+
+    let settings = await AdminSettings.findOne(filter);
 
     if (!settings) {
-      settings = await AdminSettings.create({});
+      settings = await AdminSettings.create(
+        req.user.role === "admin"
+          ? { companyId: req.user.companyId }
+          : {}
+      );
     }
 
     res.json(settings);
@@ -16,9 +25,19 @@ export const getSettings = async (req, res) => {
 
 export const updateSettings = async (req, res) => {
   try {
+    const filter =
+      req.user.role === "admin"
+        ? { companyId: req.user.companyId }
+        : {};
+
+    const update =
+      req.user.role === "admin"
+        ? { ...req.body, companyId: req.user.companyId }
+        : req.body;
+
     const settings = await AdminSettings.findOneAndUpdate(
-      {},
-      req.body,
+      filter,
+      update,
       { new: true, upsert: true }
     );
 

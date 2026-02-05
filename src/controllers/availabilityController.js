@@ -7,7 +7,12 @@ export const setAvailability = async (req, res) => {
   try {
     const data = req.body;
 
-    let availability = await Availability.findOne();
+    const filter =
+      req.user.role === "admin"
+        ? { companyId: req.user.companyId }
+        : {};
+
+    let availability = await Availability.findOne(filter);
 
     if (availability) {
       availability = await Availability.findByIdAndUpdate(
@@ -16,7 +21,10 @@ export const setAvailability = async (req, res) => {
         { new: true }
       );
     } else {
-      availability = await Availability.create(data);
+      availability = await Availability.create({
+        ...data,
+        ...(req.user.role === "admin" && { companyId: req.user.companyId }),
+      });
     }
 
     res.json(availability);
@@ -28,7 +36,12 @@ export const setAvailability = async (req, res) => {
 /* ---------------- GET AVAILABILITY ---------------- */
 export const getAvailability = async (req, res) => {
   try {
-    const availability = await Availability.findOne();
+    const filter =
+      req.user?.role === "admin"
+        ? { companyId: req.user.companyId }
+        : {};
+
+    const availability = await Availability.findOne(filter);
     res.json(availability);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -40,7 +53,15 @@ export const getTimeSlots = async (req, res) => {
   try {
     const { serviceId, date } = req.query;
 
-    const availability = await Availability.findOne();
+    const service = await Service.findById(serviceId);
+    if (!service) {
+      return res.status(404).json({ message: "Service not found" });
+    }
+
+    const availability = await Availability.findOne({
+      companyId: service.companyId,
+    });
+
     if (!availability) {
       return res.status(400).json({ message: "Availability not set" });
     }
@@ -57,11 +78,6 @@ export const getTimeSlots = async (req, res) => {
 
     if (!availability.workingDays.includes(day)) {
       return res.json([]);
-    }
-
-    const service = await Service.findById(serviceId);
-    if (!service) {
-      return res.status(404).json({ message: "Service not found" });
     }
 
     const slots = generateSlots(
