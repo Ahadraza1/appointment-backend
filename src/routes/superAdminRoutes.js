@@ -7,6 +7,7 @@ import {
   getCompanyAdmins,
   getCompanyStats,
   getAllCompanyAdmins,
+  deleteCompany,
 } from "../controllers/superAdminController.js";
 
 const router = express.Router();
@@ -35,6 +36,12 @@ router.patch(
   superAdminOnly,
   toggleCompanyStatus,
 );
+
+/**
+ * @route   DELETE /api/superadmin/company/:id
+ * @desc    Delete company and related data (Super Admin only)
+ */
+router.delete("/company/:id", protect, superAdminOnly, deleteCompany);
 
 /**
  * @route   GET /api/superadmin/company/:companyId/admins

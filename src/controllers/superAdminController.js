@@ -185,7 +185,6 @@ export const getCompanyStats = async (req, res) => {
   }
 };
 
-
 /* ================= GET ALL COMPANY ADMINS (SUPER ADMIN) ================= */
 export const getAllCompanyAdmins = async (req, res) => {
   try {
@@ -217,6 +216,51 @@ export const getAllCompanyAdmins = async (req, res) => {
     console.error("Get all company admins error:", error);
     res.status(500).json({
       message: "Failed to fetch company admins",
+    });
+  }
+};
+
+/* ================= DELETE COMPANY (SUPER ADMIN) ================= */
+export const deleteCompany = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      return res.status(400).json({
+        message: "Company id is required",
+      });
+    }
+
+    const company = await Company.findById(id);
+    if (!company) {
+      return res.status(404).json({
+        message: "Company not found",
+      });
+    }
+
+    // 1️⃣ Delete company admins
+    await User.deleteMany({
+      role: "admin",
+      companyId: id,
+    });
+
+    // 2️⃣ Delete company services
+    await Service.deleteMany({ companyId: id });
+
+    // 3️⃣ Delete company appointments
+    await Appointment.deleteMany({ companyId: id });
+
+    // 4️⃣ Delete company
+    await Company.findByIdAndDelete(id);
+
+    return res.status(200).json({
+      success: true,
+      message: "Company and related data deleted successfully",
+    });
+  } catch (error) {
+    console.error("Delete company error:", error);
+    return res.status(500).json({
+      message: "Failed to delete company",
     });
   }
 };
