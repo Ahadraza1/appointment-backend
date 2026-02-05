@@ -184,3 +184,39 @@ export const getCompanyStats = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+
+/* ================= GET ALL COMPANY ADMINS (SUPER ADMIN) ================= */
+export const getAllCompanyAdmins = async (req, res) => {
+  try {
+    const admins = await User.find({ role: "admin" })
+      .populate("companyId", "name email")
+      .select("name email createdAt companyId")
+      .sort({ createdAt: -1 });
+
+    const formattedData = admins.map((admin) => ({
+      adminId: admin._id,
+      adminName: admin.name,
+      adminEmail: admin.email,
+      createdAt: admin.createdAt,
+      company: admin.companyId
+        ? {
+            companyId: admin.companyId._id,
+            companyName: admin.companyId.name,
+            companyEmail: admin.companyId.email,
+          }
+        : null,
+    }));
+
+    res.status(200).json({
+      success: true,
+      count: formattedData.length,
+      admins: formattedData,
+    });
+  } catch (error) {
+    console.error("Get all company admins error:", error);
+    res.status(500).json({
+      message: "Failed to fetch company admins",
+    });
+  }
+};
