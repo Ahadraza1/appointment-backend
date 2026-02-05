@@ -16,9 +16,18 @@ const router = express.Router();
 /* ================= ADMIN DASHBOARD ================= */
 router.get("/dashboard", protect, adminOnly, async (req, res) => {
   try {
-    const totalCustomers = await User.countDocuments({ role: "customer" });
-    const totalServices = await Service.countDocuments();
-    const totalAppointments = await Appointment.countDocuments();
+    const companyFilter =
+      req.user.role === "admin" ? { companyId: req.user.companyId } : {};
+
+    const [totalCustomers, totalServices, totalAppointments] =
+      await Promise.all([
+        User.countDocuments({
+          role: "customer",
+          ...companyFilter,
+        }),
+        Service.countDocuments(companyFilter),
+        Appointment.countDocuments(companyFilter),
+      ]);
 
     res.json({
       totalCustomers,
@@ -33,7 +42,12 @@ router.get("/dashboard", protect, adminOnly, async (req, res) => {
 /* ================= CUSTOMERS ================= */
 router.get("/customers", protect, adminOnly, async (req, res) => {
   try {
-    const customers = await User.find({ role: "customer" })
+    const filter =
+      req.user.role === "admin"
+        ? { role: "customer", companyId: req.user.companyId }
+        : { role: "customer" };
+
+    const customers = await User.find(filter)
       .select("-password")
       .sort({ createdAt: -1 });
 
@@ -46,7 +60,12 @@ router.get("/customers", protect, adminOnly, async (req, res) => {
 /* ================= SERVICES ================= */
 router.get("/services", protect, adminOnly, async (req, res) => {
   try {
-    const services = await Service.find().sort({ createdAt: -1 });
+    const filter =
+      req.user.role === "admin"
+        ? { companyId: req.user.companyId }
+        : {};
+
+    const services = await Service.find(filter).sort({ createdAt: -1 });
     res.json(services);
   } catch (error) {
     res.status(500).json({ message: "Failed to load services" });
@@ -60,9 +79,13 @@ router.get("/appointments", protect, adminOnly, async (req, res) => {
   try {
     const { userId } = req.query;
 
-    const filter = {};
+    const filter =
+      req.user.role === "admin"
+        ? { companyId: req.user.companyId }
+        : {};
+
     if (userId && mongoose.Types.ObjectId.isValid(userId)) {
-      filter.userId = userId; // 🔥 MAIN FIX
+      filter.userId = userId;
     }
 
     const appointments = await Appointment.find(filter)
@@ -126,11 +149,16 @@ router.get("/today", protect, adminOnly, getTodayAppointments);
 // GET /api/admin/availability
 router.get("/availability", protect, adminOnly, async (req, res) => {
   try {
-    let availability = await Availability.findOne();
+    const filter =
+      req.user.role === "admin"
+        ? { companyId: req.user.companyId }
+        : {};
 
-    // first time create
+    let availability = await Availability.findOne(filter);
+
     if (!availability) {
       availability = await Availability.create({
+        companyId: req.user.companyId,
         workingDays: [],
         startTime: "09:00",
         endTime: "18:00",
@@ -149,39 +177,20 @@ router.get("/availability", protect, adminOnly, async (req, res) => {
 // PUT /api/admin/availability
 router.put("/availability", protect, adminOnly, async (req, res) => {
   try {
-    if (!req.body || Object.keys(req.body).length === 0) {
-      return res.status(400).json({
-        message: "Availability data is missing",
-      });
-    }
-
-    const { workingDays, startTime, endTime, breaks, holidays } = req.body;
+    const filter =
+      req.user.role === "admin"
+        ? { companyId: req.user.companyId }
+        : {};
 
     const updatedAvailability = await Availability.findOneAndUpdate(
-      {},
-      {
-        $set: {
-          workingDays,
-          startTime,
-          endTime,
-          breaks,
-          holidays,
-        },
-      },
-      {
-        new: true,
-        upsert: true,
-        runValidators: true,
-      }
+      filter,
+      req.body,
+      { new: true, upsert: true }
     );
 
     res.json(updatedAvailability);
   } catch (error) {
-    console.error("UPDATE AVAILABILITY ERROR:", error);
-    res.status(500).json({
-      message: "Failed to update availability",
-      error: error.message,
-    });
+    res.status(500).json({ message: "Failed to update availability" });
   }
 });
 
