@@ -53,6 +53,7 @@ export const createCompanyWithAdmin = async (req, res) => {
     const admin = await User.create({
       name: adminName,
       email: adminEmail,
+      phone: "0000000000", // ✅ REQUIRED FIELD FIX
       password: adminPassword,
       role: "admin",
       companyId: company._id,
