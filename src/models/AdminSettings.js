@@ -2,6 +2,13 @@ import mongoose from "mongoose";
 
 const adminSettingsSchema = new mongoose.Schema(
   {
+    companyId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Company",
+      required: true,
+      index: true,
+    },
+
     businessName: {
       type: String,
       default: "",
@@ -33,12 +40,9 @@ const adminSettingsSchema = new mongoose.Schema(
       },
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
-const AdminSettings = mongoose.model(
-  "AdminSettings",
-  adminSettingsSchema
-);
+const AdminSettings = mongoose.model("AdminSettings", adminSettingsSchema);
 
 export default AdminSettings;
