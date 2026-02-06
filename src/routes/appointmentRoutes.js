@@ -18,22 +18,9 @@ import {
   checkSubscription,
 } from "../middlewares/authMiddleware.js";
 
-
 import bookingLimitMiddleware from "../middlewares/bookinglimitMiddleware.js";
 
-
 const router = express.Router();
-
-/* ================= ADMIN ROUTES ================= */
-
-// 🔥 TODAY APPOINTMENTS
-router.get("/today", protect, adminOnly, getTodayAppointments);
-
-// 🔥 ALL APPOINTMENTS
-router.get("/", protect, adminOnly, getAllAppointments);
-
-// 🔥 UPDATE STATUS
-router.put("/:id/status", protect, adminOnly, updateAppointmentStatus);
 
 /* ================= CUSTOMER ROUTES ================= */
 
@@ -45,21 +32,14 @@ router.post(
   checkSubscription,
   bookingLimitMiddleware,
   validateFields(["serviceId", "date", "timeSlot"]),
-  bookAppointment
+  bookAppointment,
 );
-
-
 
 // 🔥 MY APPOINTMENTS
 router.get("/my", protect, customerOnly, getMyAppointments);
 
 // 🔥 CANCEL APPOINTMENT
-router.put(
-  "/:id/cancel",
-  protect,
-  customerOnly,
-  cancelAppointment
-);
+router.put("/:id/cancel", protect, customerOnly, cancelAppointment);
 
 // 🔥 RESCHEDULE APPOINTMENT
 router.put(
@@ -67,8 +47,19 @@ router.put(
   protect,
   customerOnly,
   checkSubscription,
-  rescheduleAppointment
+  rescheduleAppointment,
 );
+
+/* ================= ADMIN ROUTES ================= */
+
+// 🔥 TODAY APPOINTMENTS
+router.get("/today", protect, adminOnly, getTodayAppointments);
+
+// 🔥 ALL APPOINTMENTS
+router.get("/", protect, adminOnly, getAllAppointments);
+
+// 🔥 UPDATE STATUS
+router.put("/:id/status", protect, adminOnly, updateAppointmentStatus);
 
 /* ================= DYNAMIC ROUTE (LAST) ================= */
 
