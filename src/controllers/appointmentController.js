@@ -203,6 +203,7 @@ export const getMyAppointments = async (req, res) => {
   }
 };
 
+/* ================= GET ALL APPOINTMENTS ================= */
 export const getAllAppointments = async (req, res) => {
   try {
     const { userId, status, search, fromDate, toDate } = req.query;
@@ -227,6 +228,7 @@ export const getAllAppointments = async (req, res) => {
 
     // 🔒 ADMIN → company isolation at DB level
     if (req.user.role === "admin") {
+      filter.companyId = req.user.companyId;
       const services = await Service.find(
         { companyId: req.user.companyId },
         "_id",
