@@ -17,6 +17,24 @@ const router = express.Router();
 router.get("/", getServices);
 
 /* ================= ADMIN ================= */
+// GET /api/admin/services
+router.get(
+  "/admin",
+  protect,
+  adminOnly,
+  async (req, res) => {
+    try {
+      const services = await Service.find({
+        companyId: req.user.companyId,
+      }).sort({ createdAt: -1 });
+
+      res.status(200).json(services);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+);
+
 // POST /api/services
 router.post(
   "/",
