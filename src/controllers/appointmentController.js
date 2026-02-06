@@ -111,6 +111,7 @@ export const bookAppointment = async (req, res) => {
     }
 
     const appointment = await Appointment.create({
+      companyId: service.companyId, // ✅ ADD THIS
       userId: req.user._id,
       serviceId,
       date,
@@ -359,19 +360,18 @@ export const updateAppointmentStatus = async (req, res) => {
       return res.status(400).json({ message: "Invalid status value" });
     }
 
-    const appointment = await Appointment.findById(id).populate({
-      path: "serviceId",
-      select: "companyId name",
-    });
+    const appointment = await Appointment.findById(id)
+      .populate("userId", "name email")
+      .populate("serviceId", "name companyId");
 
     if (!appointment) {
       return res.status(404).json({ message: "Appointment not found" });
     }
 
-    /* 🔒 COMPANY ISOLATION (ADMIN ONLY) */
+    // 🔒 Admin company isolation
     if (
       req.user.role === "admin" &&
-      String(appointment.serviceId.companyId) !== String(req.user.companyId)
+      String(appointment.companyId) !== String(req.user.companyId)
     ) {
       return res.status(403).json({ message: "Access denied" });
     }
@@ -384,35 +384,32 @@ export const updateAppointmentStatus = async (req, res) => {
 
     /* ================= EMAIL (SAFE) ================= */
     try {
-      if (updated.userId?.email && process.env.EMAIL_USER) {
+      if (appointment.userId?.email && process.env.EMAIL_USER) {
         transporter.sendMail({
           from: `"Appointment System" <${process.env.EMAIL_USER}>`,
-          to: updated.userId.email,
+          to: appointment.userId.email,
           subject:
             status === "approved"
               ? "Appointment Approved ✅"
               : "Appointment Rejected ❌",
           html: `
-      <p>Hello ${updated.userId.name},</p>
-      <p>Your appointment for <b>${updated.serviceId?.name || "Service"}</b> 
-      on <b>${updated.date}</b> at <b>${updated.timeSlot}</b> has been 
-      <b>${status.toUpperCase()}</b>.</p>
-      ${
-        status === "rejected"
-          ? `<p><b>Reason:</b> ${rejectionReason || "Not specified"}</p>`
-          : ""
-      }
-    `,
+            <p>Hello ${appointment.userId.name},</p>
+            <p>Your appointment for <b>${appointment.serviceId.name}</b>
+            on <b>${appointment.date}</b> at <b>${appointment.timeSlot}</b>
+            has been <b>${status.toUpperCase()}</b>.</p>
+            ${
+              status === "rejected"
+                ? `<p><b>Reason:</b> ${rejectionReason || "Not specified"}</p>`
+                : ""
+            }
+          `,
         });
       }
-    } catch (emailError) {
-      console.error("EMAIL ERROR (STATUS UPDATE):", emailError.message);
-      // ❗ email fail hone par API fail nahi hogi
+    } catch (e) {
+      console.error("EMAIL ERROR:", e.message);
     }
 
-    /* ================= EMAIL END ================= */
-
-    res.json(updated);
+    res.json(appointment);
   } catch (error) {
     res.status(500).json({
       message: "Failed to update appointment status",
