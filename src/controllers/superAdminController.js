@@ -302,9 +302,28 @@ export const getCompanyCustomers = async (req, res) => {
       });
     }
 
-    const customers = await User.find({
-      role: "customer",
+    // 1️⃣ Get appointments of this company
+    const appointments = await Appointment.find({
       companyId: new mongoose.Types.ObjectId(companyId),
+    }).select("userId");
+
+    // 2️⃣ Extract unique customer IDs
+    const customerIds = [
+      ...new Set(appointments.map((a) => a.userId.toString())),
+    ];
+
+    if (customerIds.length === 0) {
+      return res.status(200).json({
+        success: true,
+        count: 0,
+        customers: [],
+      });
+    }
+
+    // 3️⃣ Fetch customer details
+    const customers = await User.find({
+      _id: { $in: customerIds },
+      role: "customer",
     })
       .select("name email phone createdAt")
       .sort({ createdAt: -1 });
@@ -321,3 +340,4 @@ export const getCompanyCustomers = async (req, res) => {
     });
   }
 };
+
