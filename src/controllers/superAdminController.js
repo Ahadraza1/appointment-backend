@@ -2,6 +2,8 @@ import Company from "../models/Company.js";
 import User from "../models/user.js";
 import Service from "../models/Service.js";
 import Appointment from "../models/Appointment.js";
+import mongoose from "mongoose";
+
 
 export const createCompanyWithAdmin = async (req, res) => {
   try {
