@@ -24,8 +24,8 @@ export const protect = async (req, res, next) => {
     // 🔒 IMPORTANT: lock companyId from token
     req.user = {
       ...user.toObject(),
-      role: decoded.role,
-      companyId: decoded.companyId || null,
+      role: user.role,
+      companyId: user.companyId || null,
     };
 
     next();
