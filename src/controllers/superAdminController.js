@@ -191,9 +191,9 @@ export const getCompanyServices = async (req, res) => {
       });
     }
 
-    const services = await Service.find({ companyId }).sort({
-      createdAt: -1,
-    });
+    const services = await Service.find({
+      companyId: new mongoose.Types.ObjectId(companyId),
+    }).sort({ createdAt: -1 });
 
     return res.status(200).json({
       success: true,
