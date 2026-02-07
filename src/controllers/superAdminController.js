@@ -81,7 +81,6 @@ export const createCompanyWithAdmin = async (req, res) => {
   }
 };
 
-
 /* ================= GET ALL COMPANIES (SUPER ADMIN) ================= */
 export const getAllCompanies = async (req, res) => {
   try {
@@ -178,6 +177,34 @@ export const getCompanyStats = async (req, res) => {
   } catch (error) {
     console.error("Get company stats error:", error);
     res.status(500).json({ message: error.message });
+  }
+};
+
+/* ================= GET COMPANY SERVICES (SUPER ADMIN) ================= */
+export const getCompanyServices = async (req, res) => {
+  try {
+    const { companyId } = req.params;
+
+    if (!companyId) {
+      return res.status(400).json({
+        message: "Company id is required",
+      });
+    }
+
+    const services = await Service.find({ companyId }).sort({
+      createdAt: -1,
+    });
+
+    return res.status(200).json({
+      success: true,
+      count: services.length,
+      services,
+    });
+  } catch (error) {
+    console.error("Get company services error:", error.message);
+    return res.status(500).json({
+      message: "Failed to fetch company services",
+    });
   }
 };
 

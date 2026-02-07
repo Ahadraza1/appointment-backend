@@ -8,6 +8,7 @@ import {
   getCompanyStats,
   getAllCompanyAdmins,
   deleteCompany,
+  getCompanyServices,
 } from "../controllers/superAdminController.js";
 
 const router = express.Router();
@@ -70,5 +71,16 @@ router.get(
  * @desc    Get all company admins (Super Admin only)
  */
 router.get("/company-admins", protect, superAdminOnly, getAllCompanyAdmins);
+
+/**
+ * @route   GET /api/superadmin/company/:companyId/services
+ * @desc    Get services of a company (Super Admin only)
+ */
+router.get(
+  "/company/:companyId/services",
+  protect,
+  superAdminOnly,
+  getCompanyServices
+);
 
 export default router;
