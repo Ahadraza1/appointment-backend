@@ -12,9 +12,11 @@ export const createService = async (req, res) => {
       });
     }
 
-    // 🔒 ensure admin has company
+    // 🔒 ensure admin has company (STRICT)
     if (req.user.role === "admin" && !req.user.companyId) {
-      return res.status(403).json({ message: "Admin company not assigned" });
+      return res.status(403).json({
+        message: "Admin company not assigned",
+      });
     }
 
     if (duration <= 0 || price <= 0) {
@@ -29,15 +31,18 @@ export const createService = async (req, res) => {
       duration,
       price,
       status: status || "active",
-     companyId: req.user.companyId,
+      companyId: req.user.companyId, // ✅ NEVER NULL
     });
 
-    res.status(201).json(service);
+    res.status(201).json({
+      success: true,
+      service,
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("Create service error:", error.message);
+    res.status(500).json({ message: "Failed to create service" });
   }
 };
-
 
 /* ================= BULK CREATE SERVICES (ADMIN) ================= */
 export const bulkCreateServices = async (req, res) => {
@@ -78,7 +83,6 @@ export const bulkCreateServices = async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 };
-
 
 /* ================= GET SERVICES (PUBLIC + PAGINATION) ================= */
 export const getServices = async (req, res) => {
