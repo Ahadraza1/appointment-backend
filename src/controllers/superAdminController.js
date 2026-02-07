@@ -80,9 +80,9 @@ export const createCompanyWithAdmin = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Create company error:", error);
+    console.error("Create company error:", error.message);
     return res.status(500).json({
-      message: "Internal server error while creating company",
+      message: error.message || "Internal server error while creating company",
     });
   }
 };
