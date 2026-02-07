@@ -39,20 +39,36 @@ router.get("/dashboard", protect, adminOnly, async (req, res) => {
   }
 });
 
-/* ================= CUSTOMERS ================= */
+/* ================= CUSTOMERS (COMPANY-WISE) ================= */
 router.get("/customers", protect, adminOnly, async (req, res) => {
   try {
-    const filter =
-      req.user.role === "admin"
-        ? { role: "customer", companyId: req.user.companyId }
-        : { role: "customer" };
+    // 🔒 Only admins see their own company customers
+    const companyFilter =
+      req.user.role === "admin" ? { companyId: req.user.companyId } : {};
 
-    const customers = await User.find(filter)
+    // 1️⃣ Find appointments for this company
+    const appointments = await Appointment.find(companyFilter).select("userId");
+
+    // 2️⃣ Extract unique customer IDs
+    const customerIds = [
+      ...new Set(appointments.map((a) => a.userId.toString())),
+    ];
+
+    if (customerIds.length === 0) {
+      return res.json([]);
+    }
+
+    // 3️⃣ Fetch customer details
+    const customers = await User.find({
+      _id: { $in: customerIds },
+      role: "customer",
+    })
       .select("-password")
       .sort({ createdAt: -1 });
 
     res.json(customers);
   } catch (error) {
+    console.error("ADMIN CUSTOMERS ERROR:", error);
     res.status(500).json({ message: "Failed to load customers" });
   }
 });
@@ -61,9 +77,7 @@ router.get("/customers", protect, adminOnly, async (req, res) => {
 router.get("/services", protect, adminOnly, async (req, res) => {
   try {
     const filter =
-      req.user.role === "admin"
-        ? { companyId: req.user.companyId }
-        : {};
+      req.user.role === "admin" ? { companyId: req.user.companyId } : {};
 
     const services = await Service.find(filter).sort({ createdAt: -1 });
     res.json(services);
@@ -80,9 +94,7 @@ router.get("/appointments", protect, adminOnly, async (req, res) => {
     const { userId } = req.query;
 
     const filter =
-      req.user.role === "admin"
-        ? { companyId: req.user.companyId }
-        : {};
+      req.user.role === "admin" ? { companyId: req.user.companyId } : {};
 
     if (userId && mongoose.Types.ObjectId.isValid(userId)) {
       filter.userId = userId;
@@ -122,7 +134,7 @@ router.put("/appointments/:id/status", protect, adminOnly, async (req, res) => {
         rejectionReason:
           status === "rejected" ? rejectionReason || "No reason provided" : "",
       },
-      { new: true }
+      { new: true },
     );
 
     if (!updatedAppointment) {
@@ -150,9 +162,7 @@ router.get("/today", protect, adminOnly, getTodayAppointments);
 router.get("/availability", protect, adminOnly, async (req, res) => {
   try {
     const filter =
-      req.user.role === "admin"
-        ? { companyId: req.user.companyId }
-        : {};
+      req.user.role === "admin" ? { companyId: req.user.companyId } : {};
 
     let availability = await Availability.findOne(filter);
 
@@ -178,14 +188,12 @@ router.get("/availability", protect, adminOnly, async (req, res) => {
 router.put("/availability", protect, adminOnly, async (req, res) => {
   try {
     const filter =
-      req.user.role === "admin"
-        ? { companyId: req.user.companyId }
-        : {};
+      req.user.role === "admin" ? { companyId: req.user.companyId } : {};
 
     const updatedAvailability = await Availability.findOneAndUpdate(
       filter,
       req.body,
-      { new: true, upsert: true }
+      { new: true, upsert: true },
     );
 
     res.json(updatedAvailability);
