@@ -29,7 +29,7 @@ export const createService = async (req, res) => {
       duration,
       price,
       status: status || "active",
-      companyId: req.user?.companyId || null,
+     companyId: req.user.companyId,
     });
 
     res.status(201).json(service);
