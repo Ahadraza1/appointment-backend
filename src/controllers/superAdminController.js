@@ -289,3 +289,35 @@ export const deleteCompany = async (req, res) => {
     });
   }
 };
+
+
+/* ================= GET COMPANY CUSTOMERS (SUPER ADMIN) ================= */
+export const getCompanyCustomers = async (req, res) => {
+  try {
+    const { companyId } = req.params;
+
+    if (!companyId) {
+      return res.status(400).json({
+        message: "Company id is required",
+      });
+    }
+
+    const customers = await User.find({
+      role: "customer",
+      companyId: new mongoose.Types.ObjectId(companyId),
+    })
+      .select("name email phone createdAt")
+      .sort({ createdAt: -1 });
+
+    return res.status(200).json({
+      success: true,
+      count: customers.length,
+      customers,
+    });
+  } catch (error) {
+    console.error("Get company customers error:", error.message);
+    return res.status(500).json({
+      message: "Failed to fetch company customers",
+    });
+  }
+};
