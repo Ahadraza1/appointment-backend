@@ -341,3 +341,33 @@ export const getCompanyCustomers = async (req, res) => {
   }
 };
 
+/* ================= GET CUSTOMER APPOINTMENTS (SUPER ADMIN) ================= */
+export const getCompanyCustomerAppointments = async (req, res) => {
+  try {
+    const { companyId, customerId } = req.params;
+
+    if (!companyId || !customerId) {
+      return res.status(400).json({
+        message: "Company id and customer id are required",
+      });
+    }
+
+    const appointments = await Appointment.find({
+      companyId: new mongoose.Types.ObjectId(companyId),
+      customerId: new mongoose.Types.ObjectId(customerId),
+    })
+      .populate("serviceId", "name price duration")
+      .sort({ createdAt: -1 });
+
+    return res.status(200).json({
+      success: true,
+      count: appointments.length,
+      appointments,
+    });
+  } catch (error) {
+    console.error("Get customer appointments error:", error.message);
+    return res.status(500).json({
+      message: "Failed to fetch customer appointments",
+    });
+  }
+};
