@@ -5,8 +5,14 @@ import Appointment from "../models/Appointment.js";
 
 export const createCompanyWithAdmin = async (req, res) => {
   try {
-    const { companyName, companyEmail, adminName, adminEmail, adminPassword } =
-      req.body;
+    const {
+      companyName,
+      companyEmail,
+      adminName,
+      adminEmail,
+      adminPassword,
+      adminPhone, // ✅ NEW
+    } = req.body;
 
     // 1️⃣ Required fields check
     if (
@@ -14,7 +20,8 @@ export const createCompanyWithAdmin = async (req, res) => {
       !companyEmail ||
       !adminName ||
       !adminEmail ||
-      !adminPassword
+      !adminPassword ||
+      !adminPhone
     ) {
       return res.status(400).json({
         message: "All fields are required",
@@ -29,7 +36,7 @@ export const createCompanyWithAdmin = async (req, res) => {
       });
     }
 
-    // 3️⃣ Duplicate company check (🔥 missing before)
+    // 3️⃣ Duplicate company check
     const companyExists = await Company.findOne({ email: companyEmail });
     if (companyExists) {
       return res.status(400).json({
@@ -43,29 +50,15 @@ export const createCompanyWithAdmin = async (req, res) => {
       email: companyEmail,
     });
 
-    if (!company) {
-      return res.status(500).json({
-        message: "Company creation failed",
-      });
-    }
-
-    // 5️⃣ Create admin
+    // 5️⃣ Create admin (✅ REAL PHONE USED)
     const admin = await User.create({
       name: adminName,
       email: adminEmail,
-      phone: "0000000000", // ✅ REQUIRED FIELD FIX
+      phone: adminPhone, // ✅ FIXED
       password: adminPassword,
       role: "admin",
       companyId: company._id,
     });
-
-    if (!admin) {
-      // rollback company if admin fails
-      await Company.findByIdAndDelete(company._id);
-      return res.status(500).json({
-        message: "Admin creation failed",
-      });
-    }
 
     return res.status(201).json({
       success: true,
@@ -77,6 +70,7 @@ export const createCompanyWithAdmin = async (req, res) => {
       admin: {
         id: admin._id,
         email: admin.email,
+        phone: admin.phone,
       },
     });
   } catch (error) {
@@ -86,6 +80,7 @@ export const createCompanyWithAdmin = async (req, res) => {
     });
   }
 };
+
 
 /* ================= GET ALL COMPANIES (SUPER ADMIN) ================= */
 export const getAllCompanies = async (req, res) => {
