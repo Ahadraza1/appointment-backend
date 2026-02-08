@@ -25,13 +25,25 @@ export const createService = async (req, res) => {
       });
     }
 
+    // decide companyId based on role
+    const companyId =
+      req.user.role === "superadmin"
+        ? req.params.companyId
+        : req.user.companyId;
+
+    if (!companyId) {
+      return res.status(400).json({
+        message: "Company id is required",
+      });
+    }
+
     const service = await Service.create({
       name,
       description: description || "",
       duration,
       price,
       status: status || "active",
-      companyId: req.user.companyId, // ✅ NEVER NULL
+      companyId,
     });
 
     res.status(201).json({

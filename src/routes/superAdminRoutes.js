@@ -13,6 +13,13 @@ import {
   getCompanyCustomerAppointments,
 } from "../controllers/superAdminController.js";
 
+import {
+  createService,
+  updateService,
+  toggleServiceStatus,
+  deleteService,
+} from "../controllers/serviceController.js";
+
 const router = express.Router();
 
 /* ================= SUPER ADMIN ROUTES ================= */
@@ -107,5 +114,52 @@ router.get(
   superAdminOnly,
   getCompanyCustomerAppointments
 );
+
+/* ================= SUPER ADMIN - COMPANY SERVICES CRUD ================= */
+
+/**
+ * @route   POST /api/superadmin/company/:companyId/services
+ * @desc    Create service for a company (Super Admin)
+ */
+router.post(
+  "/company/:companyId/services",
+  protect,
+  superAdminOnly,
+  createService
+);
+
+/**
+ * @route   PUT /api/superadmin/services/:serviceId
+ * @desc    Update service (Super Admin)
+ */
+router.put(
+  "/services/:serviceId",
+  protect,
+  superAdminOnly,
+  updateService
+);
+
+/**
+ * @route   PATCH /api/superadmin/services/:serviceId/status
+ * @desc    Toggle service active/inactive (Super Admin)
+ */
+router.patch(
+  "/services/:serviceId/status",
+  protect,
+  superAdminOnly,
+  toggleServiceStatus
+);
+
+/**
+ * @route   DELETE /api/superadmin/services/:serviceId
+ * @desc    Delete service (Super Admin)
+ */
+router.delete(
+  "/services/:serviceId",
+  protect,
+  superAdminOnly,
+  deleteService
+);
+
 
 export default router;
