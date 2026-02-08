@@ -138,21 +138,20 @@ export const getServices = async (req, res) => {
   }
 };
 
-/* ================= UPDATE SERVICE (ADMIN) ================= */
+/* ================= UPDATE SERVICE (ADMIN & SUPERADMIN) ================= */
 export const updateService = async (req, res) => {
   try {
-    const { id } = req.params;
+     const serviceId = req.params.serviceId || req.params.id;
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
+    if (!mongoose.Types.ObjectId.isValid(serviceId)) {
       return res.status(400).json({ message: "Invalid service id" });
     }
 
-    const service = await Service.findById(id);
+    const service = await Service.findById(serviceId);
     if (!service) {
       return res.status(404).json({ message: "Service not found" });
     }
 
-    // 🔒 isolation
     if (
       req.user.role === "admin" &&
       String(service.companyId) !== String(req.user.companyId)
@@ -166,23 +165,23 @@ export const updateService = async (req, res) => {
     service.price = req.body.price ?? service.price;
     service.status = req.body.status ?? service.status;
 
-    const updated = await service.save();
-    res.status(200).json(updated);
+    await service.save();
+    res.status(200).json(service);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-/* ================= DELETE SERVICE (ADMIN) ================= */
+/* ================= DELETE SERVICE (ADMIN & SUPERADMIN) ================= */
 export const deleteService = async (req, res) => {
   try {
-    const { id } = req.params;
+     const serviceId = req.params.serviceId || req.params.id;
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
+    if (!mongoose.Types.ObjectId.isValid(serviceId)) {
       return res.status(400).json({ message: "Invalid service id" });
     }
 
-    const service = await Service.findById(id);
+    const service = await Service.findById(serviceId);
     if (!service) {
       return res.status(404).json({ message: "Service not found" });
     }
@@ -201,16 +200,16 @@ export const deleteService = async (req, res) => {
   }
 };
 
-/* ================= TOGGLE SERVICE STATUS (ADMIN) ================= */
+/* ================= TOGGLE SERVICE STATUS (ADMIN & SUPERADMIN) ================= */
 export const toggleServiceStatus = async (req, res) => {
   try {
-    const { id } = req.params;
+     const serviceId = req.params.serviceId || req.params.id;
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
+    if (!mongoose.Types.ObjectId.isValid(serviceId)) {
       return res.status(400).json({ message: "Invalid service id" });
     }
 
-    const service = await Service.findById(id);
+    const service = await Service.findById(serviceId);
     if (!service) {
       return res.status(404).json({ message: "Service not found" });
     }
@@ -223,8 +222,8 @@ export const toggleServiceStatus = async (req, res) => {
     }
 
     service.status = service.status === "active" ? "inactive" : "active";
-
     await service.save();
+
     res.status(200).json(service);
   } catch (error) {
     res.status(500).json({ message: error.message });
