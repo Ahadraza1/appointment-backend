@@ -4,7 +4,6 @@ import Service from "../models/Service.js";
 import Appointment from "../models/Appointment.js";
 import mongoose from "mongoose";
 
-
 export const createCompanyWithAdmin = async (req, res) => {
   try {
     const {
@@ -290,7 +289,6 @@ export const deleteCompany = async (req, res) => {
   }
 };
 
-
 /* ================= GET COMPANY CUSTOMERS (SUPER ADMIN) ================= */
 export const getCompanyCustomers = async (req, res) => {
   try {
@@ -354,7 +352,7 @@ export const getCompanyCustomerAppointments = async (req, res) => {
 
     const appointments = await Appointment.find({
       companyId: new mongoose.Types.ObjectId(companyId),
-      userId: new mongoose.Types.ObjectId(customerId), 
+      userId: new mongoose.Types.ObjectId(customerId),
     })
       .populate("serviceId", "name price duration")
       .sort({ createdAt: -1 });
@@ -372,12 +370,11 @@ export const getCompanyCustomerAppointments = async (req, res) => {
   }
 };
 
-
 /* ================= GET SUPERADMIN PROFILE ================= */
 export const getSuperAdminProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user._id).select(
-      "name email phone role"
+      "name email phone role",
     );
 
     if (!user || user.role !== "superadmin") {
@@ -398,7 +395,6 @@ export const getSuperAdminProfile = async (req, res) => {
   }
 };
 
-
 /* ================= UPDATE SUPERADMIN PROFILE ================= */
 export const updateSuperAdminProfile = async (req, res) => {
   try {
@@ -414,12 +410,17 @@ export const updateSuperAdminProfile = async (req, res) => {
 
     // ✅ EMAIL UPDATE (with uniqueness check)
     if (email && email !== user.email) {
-      const emailExists = await User.findOne({ email });
+      const emailExists = await User.findOne({
+        email,
+        _id: { $ne: user._id }, // 🔥 exclude current user
+      });
+
       if (emailExists) {
         return res.status(400).json({
           message: "Email already in use",
         });
       }
+
       user.email = email;
     }
 
@@ -444,8 +445,6 @@ export const updateSuperAdminProfile = async (req, res) => {
     });
   }
 };
-
-
 
 /* ================= CHANGE SUPERADMIN PASSWORD ================= */
 export const changeSuperAdminPassword = async (req, res) => {
@@ -487,4 +486,3 @@ export const changeSuperAdminPassword = async (req, res) => {
     });
   }
 };
-
