@@ -13,7 +13,9 @@ const userSchema = new mongoose.Schema(
       required: true,
       unique: true,
       lowercase: true,
+      trim: true,
     },
+
     phone: {
       type: String,
       required: true,
@@ -85,7 +87,7 @@ const userSchema = new mongoose.Schema(
         return ret;
       },
     },
-  }
+  },
 );
 
 /* ================= MATCH PASSWORD ================= */
