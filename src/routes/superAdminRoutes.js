@@ -12,6 +12,9 @@ import {
   getCompanyServices,
   getCompanyCustomers,
   getCompanyCustomerAppointments,
+  getSuperAdminProfile,
+  updateSuperAdminProfile,
+  changeSuperAdminPassword,
 } from "../controllers/superAdminController.js";
 
 import {
@@ -203,5 +206,31 @@ router.put(
     }
   }
 );
+
+// ================= SUPERADMIN ACCOUNT SETTINGS =================
+
+// ================= SUPERADMIN ACCOUNT SETTINGS =================
+router.get(
+  "/profile",
+  protect,
+  superAdminOnly,
+  getSuperAdminProfile
+);
+
+router.put(
+  "/profile",
+  protect,
+  superAdminOnly,
+  updateSuperAdminProfile
+);
+
+router.put(
+  "/change-password",
+  protect,
+  superAdminOnly,
+  changeSuperAdminPassword
+);
+
+
 
 export default router;

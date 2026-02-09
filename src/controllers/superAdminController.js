@@ -372,3 +372,119 @@ export const getCompanyCustomerAppointments = async (req, res) => {
   }
 };
 
+
+/* ================= GET SUPERADMIN PROFILE ================= */
+export const getSuperAdminProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select(
+      "name email phone role"
+    );
+
+    if (!user || user.role !== "superadmin") {
+      return res.status(404).json({
+        message: "SuperAdmin not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      profile: user,
+    });
+  } catch (error) {
+    console.error("Get superadmin profile error:", error.message);
+    res.status(500).json({
+      message: "Failed to fetch profile",
+    });
+  }
+};
+
+
+/* ================= UPDATE SUPERADMIN PROFILE ================= */
+export const updateSuperAdminProfile = async (req, res) => {
+  try {
+    const { name, phone, email } = req.body;
+
+    const user = await User.findById(req.user._id);
+
+    if (!user || user.role !== "superadmin") {
+      return res.status(404).json({
+        message: "SuperAdmin not found",
+      });
+    }
+
+    // ✅ EMAIL UPDATE (with uniqueness check)
+    if (email && email !== user.email) {
+      const emailExists = await User.findOne({ email });
+      if (emailExists) {
+        return res.status(400).json({
+          message: "Email already in use",
+        });
+      }
+      user.email = email;
+    }
+
+    if (name) user.name = name;
+    if (phone) user.phone = phone;
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      profile: {
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+      },
+    });
+  } catch (error) {
+    console.error("Update superadmin profile error:", error.message);
+    res.status(500).json({
+      message: "Failed to update profile",
+    });
+  }
+};
+
+
+
+/* ================= CHANGE SUPERADMIN PASSWORD ================= */
+export const changeSuperAdminPassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        message: "Current password and new password are required",
+      });
+    }
+
+    const user = await User.findById(req.user._id);
+
+    if (!user || user.role !== "superadmin") {
+      return res.status(404).json({
+        message: "SuperAdmin not found",
+      });
+    }
+
+    const isMatch = await user.matchPassword(currentPassword);
+    if (!isMatch) {
+      return res.status(400).json({
+        message: "Current password is incorrect",
+      });
+    }
+
+    user.password = newPassword;
+    await user.save(); // password hash hook auto chalega
+
+    res.status(200).json({
+      success: true,
+      message: "Password updated successfully",
+    });
+  } catch (error) {
+    console.error("Change superadmin password error:", error.message);
+    res.status(500).json({
+      message: "Failed to update password",
+    });
+  }
+};
+
