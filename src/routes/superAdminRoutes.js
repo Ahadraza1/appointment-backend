@@ -1,5 +1,6 @@
 import express from "express";
 import { protect, superAdminOnly } from "../middlewares/authMiddleware.js";
+import Appointment from "../models/Appointment.js";
 import {
   createCompanyWithAdmin,
   getAllCompanies,
@@ -161,5 +162,46 @@ router.delete(
   deleteService
 );
 
+// UPDATE APPOINTMENT STATUS (SUPER ADMIN)
+router.put(
+  "/appointments/:id/status",
+  protect,
+  superAdminOnly,
+  async (req, res) => {
+    try {
+      const { status, rejectionReason } = req.body;
+
+      if (!["approved", "rejected"].includes(status)) {
+        return res.status(400).json({ message: "Invalid status value" });
+      }
+
+      const updatedAppointment = await Appointment.findByIdAndUpdate(
+        req.params.id,
+        {
+          status,
+          rejectionReason:
+            status === "rejected"
+              ? rejectionReason || "No reason provided"
+              : "",
+        },
+        { new: true },
+      );
+
+      if (!updatedAppointment) {
+        return res.status(404).json({ message: "Appointment not found" });
+      }
+
+      res.json({
+        message: "Appointment updated successfully",
+        appointment: updatedAppointment,
+      });
+    } catch (error) {
+      console.error("SUPERADMIN UPDATE STATUS ERROR:", error);
+      res.status(500).json({
+        message: "Failed to update appointment",
+      });
+    }
+  }
+);
 
 export default router;
