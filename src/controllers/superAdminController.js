@@ -354,7 +354,7 @@ export const getCompanyCustomerAppointments = async (req, res) => {
 
     const appointments = await Appointment.find({
       companyId: new mongoose.Types.ObjectId(companyId),
-      customerId: new mongoose.Types.ObjectId(customerId),
+      userId: new mongoose.Types.ObjectId(customerId), 
     })
       .populate("serviceId", "name price duration")
       .sort({ createdAt: -1 });
@@ -371,3 +371,4 @@ export const getCompanyCustomerAppointments = async (req, res) => {
     });
   }
 };
+
