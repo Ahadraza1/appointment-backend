@@ -408,11 +408,11 @@ export const updateSuperAdminProfile = async (req, res) => {
       });
     }
 
-    // ✅ EMAIL UPDATE (with uniqueness check)
+    // ✅ EMAIL UPDATE (with proper uniqueness check)
     if (email && email !== user.email) {
       const emailExists = await User.findOne({
         email,
-        _id: { $ne: user._id }, // 🔥 exclude current user
+        _id: { $ne: user._id },
       });
 
       if (emailExists) {
@@ -429,22 +429,28 @@ export const updateSuperAdminProfile = async (req, res) => {
 
     await user.save();
 
-    res.status(200).json({
+    // 🔥 IMPORTANT FIX: fetch fresh user from DB
+    const updatedUser = await User.findById(user._id).select(
+      "name email phone",
+    );
+
+    return res.status(200).json({
       success: true,
       message: "Profile updated successfully",
       profile: {
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        phone: updatedUser.phone,
       },
     });
   } catch (error) {
     console.error("Update superadmin profile error:", error.message);
-    res.status(500).json({
+    return res.status(500).json({
       message: "Failed to update profile",
     });
   }
 };
+
 
 /* ================= CHANGE SUPERADMIN PASSWORD ================= */
 export const changeSuperAdminPassword = async (req, res) => {
