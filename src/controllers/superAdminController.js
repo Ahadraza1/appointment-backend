@@ -374,7 +374,7 @@ export const getCompanyCustomerAppointments = async (req, res) => {
 export const getSuperAdminProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user._id).select(
-      "name email phone role",
+      "name email phone role profilePhoto",
     );
 
     if (!user || user.role !== "superadmin") {
@@ -451,7 +451,6 @@ export const updateSuperAdminProfile = async (req, res) => {
   }
 };
 
-
 /* ================= CHANGE SUPERADMIN PASSWORD ================= */
 export const changeSuperAdminPassword = async (req, res) => {
   try {
@@ -489,6 +488,41 @@ export const changeSuperAdminPassword = async (req, res) => {
     console.error("Change superadmin password error:", error.message);
     res.status(500).json({
       message: "Failed to update password",
+    });
+  }
+};
+
+/* ================= UPDATE SUPERADMIN PROFILE PHOTO ================= */
+export const updateSuperAdminProfilePhoto = async (req, res) => {
+  try {
+    // multer ke through file aayegi
+    if (!req.file) {
+      return res.status(400).json({
+        message: "No file uploaded",
+      });
+    }
+
+    const user = await User.findById(req.user._id);
+
+    if (!user || user.role !== "superadmin") {
+      return res.status(404).json({
+        message: "SuperAdmin not found",
+      });
+    }
+
+    // ✅ save relative path
+    user.profilePhoto = `/uploads/${req.file.filename}`;
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Profile photo updated successfully",
+      profilePhoto: user.profilePhoto,
+    });
+  } catch (error) {
+    console.error("Update profile photo error:", error.message);
+    return res.status(500).json({
+      message: "Failed to update profile photo",
     });
   }
 };

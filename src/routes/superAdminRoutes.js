@@ -1,6 +1,7 @@
 import express from "express";
 import { protect, superAdminOnly } from "../middlewares/authMiddleware.js";
 import Appointment from "../models/Appointment.js";
+import upload from "../middlewares/uploadMiddleware.js";
 import {
   createCompanyWithAdmin,
   getAllCompanies,
@@ -15,6 +16,7 @@ import {
   getSuperAdminProfile,
   updateSuperAdminProfile,
   changeSuperAdminPassword,
+  updateSuperAdminProfilePhoto,
 } from "../controllers/superAdminController.js";
 
 import {
@@ -229,6 +231,15 @@ router.put(
   protect,
   superAdminOnly,
   changeSuperAdminPassword
+);
+
+// ================= SUPERADMIN PROFILE PHOTO =================
+router.put(
+  "/profile/photo",
+  protect,
+  superAdminOnly,
+  upload.single("profilePhoto"),
+  updateSuperAdminProfilePhoto
 );
 
 
