@@ -3,6 +3,8 @@ import User from "../models/user.js";
 import Service from "../models/Service.js";
 import Appointment from "../models/Appointment.js";
 import mongoose from "mongoose";
+import jwt from "jsonwebtoken";
+
 
 export const createCompanyWithAdmin = async (req, res) => {
   try {
@@ -551,6 +553,67 @@ export const removeSuperAdminProfilePhoto = async (req, res) => {
     console.error("Remove profile photo error:", error.message);
     return res.status(500).json({
       message: "Failed to remove profile photo",
+    });
+  }
+};
+
+/* ================= IMPERSONATE COMPANY ADMIN (SUPER ADMIN ONLY) ================= */
+export const impersonateCompanyAdmin = async (req, res) => {
+  try {
+    const { companyId } = req.body;
+
+    if (!companyId) {
+      return res.status(400).json({
+        message: "Company id is required",
+      });
+    }
+
+    // ✅ Find company
+    const company = await Company.findById(companyId);
+    if (!company) {
+      return res.status(404).json({
+        message: "Company not found",
+      });
+    }
+
+    // ✅ Find company admin
+    const admin = await User.findOne({
+      role: "admin",
+      companyId: companyId,
+    });
+
+    if (!admin) {
+      return res.status(404).json({
+        message: "Company admin not found",
+      });
+    }
+
+    // ✅ Generate impersonation token
+    const token = jwt.sign(
+      {
+        id: admin._id,
+        role: "admin",
+        companyId: companyId,
+        impersonatedBy: "superadmin",
+      },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "1h",
+      },
+    );
+
+    return res.status(200).json({
+      success: true,
+      token,
+      company: {
+        id: company._id,
+        name: company.name,
+      },
+    });
+  } catch (error) {
+    console.error("Impersonate company admin error:", error.message);
+    return res.status(500).json({
+      message: "Failed to impersonate company admin",
     });
   }
 };

@@ -18,6 +18,7 @@ import {
   changeSuperAdminPassword,
   updateSuperAdminProfilePhoto,
   removeSuperAdminProfilePhoto,
+  impersonateCompanyAdmin,
 } from "../controllers/superAdminController.js";
 
 import {
@@ -42,6 +43,17 @@ router.post("/company", protect, superAdminOnly, createCompanyWithAdmin);
  * @desc    Get all companies (Super Admin only)
  */
 router.get("/companies", protect, superAdminOnly, getAllCompanies);
+
+/**
+ * @route   POST /api/superadmin/impersonate-company-admin
+ * @desc    Login as company admin (Super Admin only)
+ */
+router.post(
+  "/impersonate-company-admin",
+  protect,
+  superAdminOnly,
+  impersonateCompanyAdmin,
+);
 
 /**
  * @route   PATCH /api/superadmin/company/:id/status
