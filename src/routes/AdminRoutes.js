@@ -16,28 +16,29 @@ const router = express.Router();
 /* ================= ADMIN DASHBOARD ================= */
 router.get("/dashboard", protect, adminOnly, async (req, res) => {
   try {
-    const companyFilter =
-      req.user.role === "admin" ? { companyId: req.user.companyId } : {};
+    const companyId = req.user.companyId;
 
-    const [totalCustomers, totalServices, totalAppointments] =
-      await Promise.all([
-        User.countDocuments({
-          role: "customer",
-          ...companyFilter,
-        }),
-        Service.countDocuments(companyFilter),
-        Appointment.countDocuments(companyFilter),
-      ]);
+    const uniqueCustomerIds = await Appointment.distinct(
+      "userId",
+      { companyId }
+    );
+
+    const [totalServices, totalAppointments] = await Promise.all([
+      Service.countDocuments({ companyId }),
+      Appointment.countDocuments({ companyId }),
+    ]);
 
     res.json({
-      totalCustomers,
+      totalCustomers: uniqueCustomerIds.length,
       totalServices,
       totalAppointments,
     });
   } catch (error) {
+    console.error("Dashboard data error:", error);
     res.status(500).json({ message: "Dashboard data error" });
   }
 });
+
 
 /* ================= CUSTOMERS (COMPANY-WISE) ================= */
 router.get("/customers", protect, adminOnly, async (req, res) => {
