@@ -526,3 +526,31 @@ export const updateSuperAdminProfilePhoto = async (req, res) => {
     });
   }
 };
+
+/* ================= REMOVE SUPERADMIN PROFILE PHOTO ================= */
+export const removeSuperAdminProfilePhoto = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+
+    if (!user || user.role !== "superadmin") {
+      return res.status(404).json({
+        message: "SuperAdmin not found",
+      });
+    }
+
+    // ✅ remove photo reference
+    user.profilePhoto = null;
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Profile photo removed successfully",
+      profilePhoto: null,
+    });
+  } catch (error) {
+    console.error("Remove profile photo error:", error.message);
+    return res.status(500).json({
+      message: "Failed to remove profile photo",
+    });
+  }
+};

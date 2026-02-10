@@ -17,6 +17,7 @@ import {
   updateSuperAdminProfile,
   changeSuperAdminPassword,
   updateSuperAdminProfilePhoto,
+  removeSuperAdminProfilePhoto,
 } from "../controllers/superAdminController.js";
 
 import {
@@ -95,9 +96,8 @@ router.get(
   "/company/:companyId/services",
   protect,
   superAdminOnly,
-  getCompanyServices
+  getCompanyServices,
 );
-
 
 /**
  * @route   GET /api/superadmin/company/:companyId/customers
@@ -107,7 +107,7 @@ router.get(
   "/company/:companyId/customers",
   protect,
   superAdminOnly,
-  getCompanyCustomers
+  getCompanyCustomers,
 );
 
 /**
@@ -118,7 +118,7 @@ router.get(
   "/company/:companyId/customers/:customerId/appointments",
   protect,
   superAdminOnly,
-  getCompanyCustomerAppointments
+  getCompanyCustomerAppointments,
 );
 
 /* ================= SUPER ADMIN - COMPANY SERVICES CRUD ================= */
@@ -131,19 +131,14 @@ router.post(
   "/company/:companyId/services",
   protect,
   superAdminOnly,
-  createService
+  createService,
 );
 
 /**
  * @route   PUT /api/superadmin/services/:serviceId
  * @desc    Update service (Super Admin)
  */
-router.put(
-  "/services/:serviceId",
-  protect,
-  superAdminOnly,
-  updateService
-);
+router.put("/services/:serviceId", protect, superAdminOnly, updateService);
 
 /**
  * @route   PATCH /api/superadmin/services/:serviceId/status
@@ -153,19 +148,14 @@ router.patch(
   "/services/:serviceId/status",
   protect,
   superAdminOnly,
-  toggleServiceStatus
+  toggleServiceStatus,
 );
 
 /**
  * @route   DELETE /api/superadmin/services/:serviceId
  * @desc    Delete service (Super Admin)
  */
-router.delete(
-  "/services/:serviceId",
-  protect,
-  superAdminOnly,
-  deleteService
-);
+router.delete("/services/:serviceId", protect, superAdminOnly, deleteService);
 
 // UPDATE APPOINTMENT STATUS (SUPER ADMIN)
 router.put(
@@ -206,31 +196,21 @@ router.put(
         message: "Failed to update appointment",
       });
     }
-  }
+  },
 );
 
 // ================= SUPERADMIN ACCOUNT SETTINGS =================
 
 // ================= SUPERADMIN ACCOUNT SETTINGS =================
-router.get(
-  "/profile",
-  protect,
-  superAdminOnly,
-  getSuperAdminProfile
-);
+router.get("/profile", protect, superAdminOnly, getSuperAdminProfile);
 
-router.put(
-  "/profile",
-  protect,
-  superAdminOnly,
-  updateSuperAdminProfile
-);
+router.put("/profile", protect, superAdminOnly, updateSuperAdminProfile);
 
 router.put(
   "/change-password",
   protect,
   superAdminOnly,
-  changeSuperAdminPassword
+  changeSuperAdminPassword,
 );
 
 // ================= SUPERADMIN PROFILE PHOTO =================
@@ -239,9 +219,14 @@ router.put(
   protect,
   superAdminOnly,
   upload.single("profilePhoto"),
-  updateSuperAdminProfilePhoto
+  updateSuperAdminProfilePhoto,
 );
 
-
+router.put(
+  "/profile/photo/remove",
+  protect,
+  superAdminOnly,
+  removeSuperAdminProfilePhoto,
+);
 
 export default router;
