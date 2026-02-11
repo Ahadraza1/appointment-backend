@@ -14,7 +14,6 @@ export const registerUser = async (req, res) => {
         .json({ message: "Please fill all required fields" });
     }
 
-    // 🔒 Admin must belong to a company
     if (role === "admin" && !companyId) {
       return res.status(400).json({
         message: "Admin must be assigned to a company",
@@ -42,18 +41,15 @@ export const registerUser = async (req, res) => {
       role: user.role,
       profilePhoto: user.profilePhoto,
       companyId: user.companyId || null,
-
-      // ✅ PLAN FIELDS ADDED
       planType: user.planType,
       bookingUsed: user.bookingUsed,
       bookingLimit: user.bookingLimit,
       subscriptionEndDate: user.subscriptionEndDate,
       subscriptionStatus: user.subscriptionStatus,
-
       token: generateToken(user._id, user.role, user.companyId || null),
     });
   } catch (error) {
-    next(error);
+    console.error(error);
     res.status(500).json({ message: error.message });
   }
 };
