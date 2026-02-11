@@ -166,7 +166,15 @@ export const createPaypalOrderController = async (req, res) => {
  */
 export const capturePaypalPaymentController = async (req, res) => {
   try {
-    const userId = req.user?.id;
+    // 🔒 AUTH CHECK (FIX FOR userId undefined)
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized. Please login again.",
+      });
+    }
+
+    const userId = req.user.id;
     const { orderId, planType, amount } = req.body;
 
     if (!orderId || !planType || !amount) {
@@ -207,7 +215,7 @@ export const capturePaypalPaymentController = async (req, res) => {
       });
     }
 
-    // ✅ Use ORIGINAL planType (monthly/yearly)
+    // 💾 SAVE PAYMENT
     const payment = await Payment.create({
       userId,
       planType,
@@ -217,15 +225,16 @@ export const capturePaypalPaymentController = async (req, res) => {
       status: "success",
     });
 
+    // 🚀 ACTIVATE SUBSCRIPTION
     const subscription = await activateSubscription({
       userId,
-      planType, // <-- THIS FIXES 500 ERROR
+      planType,
     });
 
     payment.subscriptionId = subscription._id;
     await payment.save();
 
-    // ===== INVOICE =====
+    // 🧾 INVOICE
     let invoiceNumber = null;
     try {
       const invoiceData = {
