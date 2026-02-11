@@ -9,7 +9,9 @@ export const registerUser = async (req, res) => {
     const { name, email, phone, password, role, companyId } = req.body;
 
     if (!name || !email || !phone || !password || !role) {
-      return res.status(400).json({ message: "Please fill all required fields" });
+      return res
+        .status(400)
+        .json({ message: "Please fill all required fields" });
     }
 
     // 🔒 Admin must belong to a company
@@ -40,6 +42,14 @@ export const registerUser = async (req, res) => {
       role: user.role,
       profilePhoto: user.profilePhoto,
       companyId: user.companyId || null,
+
+      // ✅ PLAN FIELDS ADDED
+      planType: user.planType,
+      bookingUsed: user.bookingUsed,
+      bookingLimit: user.bookingLimit,
+      subscriptionEndDate: user.subscriptionEndDate,
+      subscriptionStatus: user.subscriptionStatus,
+
       token: generateToken(user._id, user.role, user.companyId || null),
     });
   } catch (error) {
@@ -87,6 +97,14 @@ export const loginUser = async (req, res) => {
       role: user.role,
       profilePhoto: user.profilePhoto,
       companyId: user.companyId || null,
+
+      // ✅ PLAN FIELDS ADDED
+      planType: user.planType,
+      bookingUsed: user.bookingUsed,
+      bookingLimit: user.bookingLimit,
+      subscriptionEndDate: user.subscriptionEndDate,
+      subscriptionStatus: user.subscriptionStatus,
+
       token: generateToken(user._id, user.role, user.companyId || null),
     });
   } catch (error) {
