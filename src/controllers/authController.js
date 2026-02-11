@@ -53,6 +53,7 @@ export const registerUser = async (req, res) => {
       token: generateToken(user._id, user.role, user.companyId || null),
     });
   } catch (error) {
+    next(error);
     res.status(500).json({ message: error.message });
   }
 };
