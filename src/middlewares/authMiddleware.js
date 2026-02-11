@@ -4,6 +4,8 @@ import User from "../models/user.js";
 /* ================= PROTECT ================= */
 export const protect = async (req, res, next) => {
   try {
+    console.log("JWT_SECRET from env:", process.env.JWT_SECRET);
+
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -11,7 +13,7 @@ export const protect = async (req, res, next) => {
     }
 
     const token = authHeader.split(" ")[1];
-
+      
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     // decoded = { id, role, companyId }
 
