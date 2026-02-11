@@ -159,7 +159,6 @@ export const createPaypalOrderController = async (req, res) => {
   }
 };
 
-
 /**
  * @desc    Capture PayPal payment
  * @route   POST /api/payment/paypal/capture
@@ -177,6 +176,13 @@ export const capturePaypalPaymentController = async (req, res) => {
       });
     }
 
+    if (!["monthly", "yearly"].includes(planType)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid plan type",
+      });
+    }
+
     const request = new paypal.orders.OrdersCaptureRequest(orderId);
     request.requestBody({});
 
@@ -186,7 +192,6 @@ export const capturePaypalPaymentController = async (req, res) => {
       capture = await paypalClient.execute(request);
     } catch (paypalError) {
       console.error("PAYPAL EXECUTION ERROR 👉", paypalError);
-
       return res.status(400).json({
         success: false,
         message: "PayPal capture failed",
@@ -202,20 +207,10 @@ export const capturePaypalPaymentController = async (req, res) => {
       });
     }
 
-    // 🔥 PLAN TYPE NORMALIZATION (FIX FOR 500 ERROR)
-    let safePlanType = planType;
-
-    if (planType === "monthly") {
-      safePlanType = "professional_monthly";
-    }
-
-    if (planType === "yearly") {
-      safePlanType = "professional_yearly";
-    }
-
+    // ✅ Use ORIGINAL planType (monthly/yearly)
     const payment = await Payment.create({
       userId,
-      planType: safePlanType,
+      planType,
       amount,
       paymentGateway: "paypal",
       gatewayPaymentId: capture.result.id,
@@ -224,7 +219,7 @@ export const capturePaypalPaymentController = async (req, res) => {
 
     const subscription = await activateSubscription({
       userId,
-      planType: safePlanType,
+      planType, // <-- THIS FIXES 500 ERROR
     });
 
     payment.subscriptionId = subscription._id;
@@ -236,8 +231,8 @@ export const capturePaypalPaymentController = async (req, res) => {
       const invoiceData = {
         invoiceNumber: generateInvoiceNumber(),
         userId,
-        plan: safePlanType,
-        billingCycle: safePlanType,
+        plan: planType,
+        billingCycle: planType,
         amount,
         transactionId: capture.result.id,
         status: "Paid",
