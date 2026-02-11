@@ -55,7 +55,7 @@ export const registerUser = async (req, res) => {
 };
 
 /* ---------------- LOGIN ---------------- */
-export const loginUser = async (req, res) => {
+export const loginUser = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
@@ -105,7 +105,7 @@ export const loginUser = async (req, res) => {
       token: generateToken(user._id, user.role, user.companyId || null),
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    next(error);
   }
 };
 
