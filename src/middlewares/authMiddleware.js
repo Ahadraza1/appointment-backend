@@ -4,38 +4,49 @@ import User from "../models/user.js";
 /* ================= PROTECT ================= */
 export const protect = async (req, res, next) => {
   try {
-    console.log("JWT_SECRET from env:", process.env.JWT_SECRET);
-
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({ message: "Not authorized, no token" });
+      return res.status(401).json({
+        message: "Not authorized, no token",
+      });
     }
 
     const token = authHeader.split(" ")[1];
-      
+
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    // decoded = { id, role, companyId }
+
+    if (!decoded || !decoded.id) {
+      return res.status(401).json({
+        message: "Not authorized, invalid token",
+      });
+    }
 
     const user = await User.findById(decoded.id);
 
     if (!user) {
-      return res.status(401).json({ message: "User not found" });
+      return res.status(401).json({
+        message: "User not found",
+      });
     }
 
-    // 🔒 IMPORTANT: lock companyId from token
+    // 🔥 FIX: ensure id is always available as string
     req.user = {
       ...user.toObject(),
+      id: user._id.toString(),
       role: user.role,
       companyId: user.companyId || null,
     };
 
     next();
   } catch (error) {
-    console.error("Auth error:", error);
-    res.status(401).json({ message: "Not authorized, token failed" });
+    console.error("Auth error:", error.message);
+    return res.status(401).json({
+      message: "Not authorized, token failed",
+    });
   }
 };
+
 
 /* ================= SUBSCRIPTION GUARD ================= */
 export const checkSubscription = (req, res, next) => {
