@@ -159,6 +159,7 @@ export const createPaypalOrderController = async (req, res) => {
   }
 };
 
+
 /**
  * @desc    Capture PayPal payment
  * @route   POST /api/payment/paypal/capture
@@ -196,14 +197,25 @@ export const capturePaypalPaymentController = async (req, res) => {
     if (!capture?.result || capture.result.status !== "COMPLETED") {
       return res.status(400).json({
         success: false,
-        message: `PayPal payment not completed`,
+        message: "PayPal payment not completed",
         paypalStatus: capture?.result?.status,
       });
     }
 
+    // 🔥 PLAN TYPE NORMALIZATION (FIX FOR 500 ERROR)
+    let safePlanType = planType;
+
+    if (planType === "monthly") {
+      safePlanType = "professional_monthly";
+    }
+
+    if (planType === "yearly") {
+      safePlanType = "professional_yearly";
+    }
+
     const payment = await Payment.create({
       userId,
-      planType,
+      planType: safePlanType,
       amount,
       paymentGateway: "paypal",
       gatewayPaymentId: capture.result.id,
@@ -212,20 +224,20 @@ export const capturePaypalPaymentController = async (req, res) => {
 
     const subscription = await activateSubscription({
       userId,
-      planType,
+      planType: safePlanType,
     });
 
     payment.subscriptionId = subscription._id;
     await payment.save();
 
-    // ===== INVOICE (UNCHANGED LOGIC) =====
+    // ===== INVOICE =====
     let invoiceNumber = null;
     try {
       const invoiceData = {
         invoiceNumber: generateInvoiceNumber(),
         userId,
-        plan: planType,
-        billingCycle: planType,
+        plan: safePlanType,
+        billingCycle: safePlanType,
         amount,
         transactionId: capture.result.id,
         status: "Paid",
