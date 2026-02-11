@@ -19,6 +19,7 @@ import {
   updateSuperAdminProfilePhoto,
   removeSuperAdminProfilePhoto,
   impersonateCompanyAdmin,
+  changeCompanyAdminPassword,
 } from "../controllers/superAdminController.js";
 
 import {
@@ -99,6 +100,17 @@ router.get(
  * @desc    Get all company admins (Super Admin only)
  */
 router.get("/company-admins", protect, superAdminOnly, getAllCompanyAdmins);
+
+/**
+ * @route   PUT /api/superadmin/company-admins/:adminId/password
+ * @desc    Change company admin password (Super Admin only)
+ */
+router.put(
+  "/company-admins/:adminId/password",
+  protect,
+  superAdminOnly,
+  changeCompanyAdminPassword,
+);
 
 /**
  * @route   GET /api/superadmin/company/:companyId/services

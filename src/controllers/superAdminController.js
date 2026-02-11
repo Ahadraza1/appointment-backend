@@ -617,3 +617,47 @@ export const impersonateCompanyAdmin = async (req, res) => {
     });
   }
 };
+
+/* ================= CHANGE COMPANY ADMIN PASSWORD (SUPER ADMIN) ================= */
+export const changeCompanyAdminPassword = async (req, res) => {
+  try {
+    const { adminId } = req.params;
+    const { email, newPassword } = req.body;
+
+    if (!adminId || !email || !newPassword) {
+      return res.status(400).json({
+        message: "Admin id, email and new password are required",
+      });
+    }
+
+    // Find admin
+    const admin = await User.findById(adminId);
+
+    if (!admin || admin.role !== "admin") {
+      return res.status(404).json({
+        message: "Company admin not found",
+      });
+    }
+
+    // Email match validation
+    if (admin.email !== email) {
+      return res.status(400).json({
+        message: "Email does not match this admin",
+      });
+    }
+
+    // Update password (mongoose pre-save hook will hash it)
+    admin.password = newPassword;
+    await admin.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Company admin password updated successfully",
+    });
+  } catch (error) {
+    console.error("Change company admin password error:", error.message);
+    return res.status(500).json({
+      message: "Failed to update company admin password",
+    });
+  }
+};
