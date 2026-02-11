@@ -6,102 +6,92 @@ const userSchema = new mongoose.Schema(
     name: {
       type: String,
       required: true,
-      trim: true,
     },
+
     email: {
       type: String,
       required: true,
       unique: true,
-      lowercase: true,
-      trim: true,
     },
 
     phone: {
       type: String,
       required: true,
     },
+
     password: {
       type: String,
       required: true,
     },
 
-    // 🔹 UPDATED: role now supports superadmin
     role: {
       type: String,
-      enum: ["superadmin", "admin", "customer"],
+      enum: ["customer", "admin", "superadmin"],
       default: "customer",
     },
 
-    // 🔹 NEW: companyId (only for admin)
     companyId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Company",
-      default: null, // superadmin & customers
+      default: null,
     },
 
-    /* ================= SUBSCRIPTION FIELDS ================= */
+    profilePhoto: {
+      type: String,
+    },
+
+    /* ================= SUBSCRIPTION ================= */
+
     planType: {
       type: String,
       enum: ["free", "monthly", "yearly"],
       default: "free",
     },
+
     subscriptionStatus: {
       type: String,
-      enum: ["active", "expired", "cancelled"],
+      enum: ["active", "expired"],
       default: "active",
     },
+
     subscriptionStartDate: {
       type: Date,
-      default: Date.now,
+      default: null,
     },
+
     subscriptionEndDate: {
       type: Date,
       default: null,
     },
+
+    /* ================= BOOKING LIMIT ================= */
+
     bookingLimit: {
       type: Number,
-      default: 10, // free plan limit
+      default: 10, // free plan default
     },
+
     bookingUsed: {
       type: Number,
       default: 0,
     },
 
-    // ✅ RESET PASSWORD SUPPORT
-    resetPasswordToken: {
-      type: String,
-    },
-    resetPasswordExpire: {
-      type: Date,
-    },
-    profilePhoto: {
-      type: String,
-      default: null,
+    freePlanUsed: {
+      type: Boolean,
+      default: false,
     },
   },
-  {
-    timestamps: true,
-    toJSON: {
-      transform: function (doc, ret) {
-        delete ret.password;
-        return ret;
-      },
-    },
-  },
+  { timestamps: true },
 );
 
-/* ================= MATCH PASSWORD ================= */
-userSchema.methods.matchPassword = async function (enteredPassword) {
-  return await bcrypt.compare(enteredPassword, this.password);
-};
+/* ================= PASSWORD HASH ================= */
 
-/* ================= HASH PASSWORD ================= */
-userSchema.pre("save", async function () {
-  if (!this.isModified("password")) return;
-
-  const salt = await bcrypt.genSalt(10);
-  this.password = await bcrypt.hash(this.password, salt);
+userSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) return next();
+  this.password = await bcrypt.hash(this.password, 10);
+  next();
 });
 
 const User = mongoose.model("User", userSchema);
+
 export default User;

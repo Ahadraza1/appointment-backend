@@ -30,6 +30,12 @@ export const bookAppointment = async (req, res) => {
 
     const user = await User.findById(req.user._id);
 
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    /* ================= PLAN CHECK ================= */
+
     if (user.subscriptionStatus === "expired") {
       return res.status(403).json({
         message: "Your plan has expired. Please upgrade your plan to continue.",
@@ -37,17 +43,18 @@ export const bookAppointment = async (req, res) => {
       });
     }
 
-    if (
-      user.planType === "free" &&
-      user.bookingLimit !== Infinity &&
-      user.bookingUsed >= user.bookingLimit
-    ) {
-      return res.status(403).json({
-        message:
-          "Your free plan booking limit is over. Please upgrade to Monthly or Yearly plan.",
-        redirect: "pricing",
-      });
+    // 🔥 STRICT FREE PLAN LIMIT (MAX 10)
+    if (user.planType === "free") {
+      if (user.bookingUsed >= 10) {
+        return res.status(403).json({
+          message:
+            "Your free plan booking limit (10) is completed. Please upgrade your plan to continue.",
+          redirect: "pricing",
+        });
+      }
     }
+
+    /* ================= AVAILABILITY CHECK ================= */
 
     const availability = await Availability.findOne();
     if (!availability || !availability.bookingOpen) {
@@ -110,8 +117,10 @@ export const bookAppointment = async (req, res) => {
         .json({ message: "This time slot is already booked" });
     }
 
+    /* ================= CREATE APPOINTMENT ================= */
+
     const appointment = await Appointment.create({
-      companyId: service.companyId, // ✅ ADD THIS
+      companyId: service.companyId,
       userId: req.user._id,
       serviceId,
       date,
@@ -120,14 +129,17 @@ export const bookAppointment = async (req, res) => {
       status: "pending",
     });
 
-    await User.findByIdAndUpdate(req.user._id, {
-      $inc: { bookingUsed: 1 },
-    });
+    // 🔥 Increment ONLY if FREE plan
+    if (user.planType === "free") {
+      await User.findByIdAndUpdate(req.user._id, {
+        $inc: { bookingUsed: 1 },
+      });
+    }
 
-    /* ✅ RESPOND IMMEDIATELY (FIX) */
     res.status(201).json({ appointment });
 
-    /* ================= EMAILS (BACKGROUND – NON BLOCKING) ================= */
+    /* ================= EMAIL BACKGROUND ================= */
+
     setImmediate(() => {
       try {
         const adminEmail = process.env.ADMIN_EMAIL;
