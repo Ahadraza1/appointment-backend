@@ -166,19 +166,38 @@ export const createPaypalOrderController = async (req, res) => {
  */
 export const capturePaypalPaymentController = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user?.id;
     const { orderId, planType, amount } = req.body;
+
+    if (!orderId || !planType || !amount) {
+      return res.status(400).json({
+        success: false,
+        message: "orderId, planType and amount are required",
+      });
+    }
 
     const request = new paypal.orders.OrdersCaptureRequest(orderId);
     request.requestBody({});
 
-    const capture = await paypalClient.execute(request);
+    let capture;
 
-    if (capture.result.status !== "COMPLETED") {
+    try {
+      capture = await paypalClient.execute(request);
+    } catch (paypalError) {
+      console.error("PAYPAL EXECUTION ERROR 👉", paypalError);
+
       return res.status(400).json({
         success: false,
-        message: `PayPal payment not completed. Current status: ${capture.result.status}`,
-        paypalStatus: capture.result.status,
+        message: "PayPal capture failed",
+        error: paypalError.message,
+      });
+    }
+
+    if (!capture?.result || capture.result.status !== "COMPLETED") {
+      return res.status(400).json({
+        success: false,
+        message: `PayPal payment not completed`,
+        paypalStatus: capture?.result?.status,
       });
     }
 
@@ -199,7 +218,7 @@ export const capturePaypalPaymentController = async (req, res) => {
     payment.subscriptionId = subscription._id;
     await payment.save();
 
-    // ================= INVOICE (LIVE SAFE – ADDED) =================
+    // ===== INVOICE (UNCHANGED LOGIC) =====
     let invoiceNumber = null;
     try {
       const invoiceData = {
@@ -218,19 +237,19 @@ export const capturePaypalPaymentController = async (req, res) => {
     } catch (err) {
       console.error("Invoice generation failed (paypal):", err);
     }
-    // ===============================================================
 
     return res.status(200).json({
       success: true,
       message: "PayPal payment captured successfully",
-      invoiceNumber, // ✅ ADDED (safe)
+      invoiceNumber,
     });
   } catch (error) {
     console.error("PAYPAL CAPTURE ERROR 👉", error);
 
     return res.status(500).json({
       success: false,
-      message: "PayPal capture API failed",
+      message: error.message || "PayPal capture API failed",
     });
   }
 };
+
