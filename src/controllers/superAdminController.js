@@ -661,3 +661,23 @@ export const changeCompanyAdminPassword = async (req, res) => {
     });
   }
 };
+
+/* ================= GET ALL CUSTOMERS (SUPER ADMIN) ================= */
+export const getAllCustomers = async (req, res) => {
+  try {
+    const customers = await User.find({ role: "customer" })
+      .select("name email phone createdAt planType subscriptionStatus")
+      .sort({ createdAt: -1 });
+
+    return res.status(200).json({
+      success: true,
+      count: customers.length,
+      customers,
+    });
+  } catch (error) {
+    console.error("Get all customers error:", error.message);
+    return res.status(500).json({
+      message: "Failed to fetch customers",
+    });
+  }
+};

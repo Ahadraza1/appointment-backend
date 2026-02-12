@@ -20,6 +20,7 @@ import {
   removeSuperAdminProfilePhoto,
   impersonateCompanyAdmin,
   changeCompanyAdminPassword,
+  getAllCustomers,
 } from "../controllers/superAdminController.js";
 
 import {
@@ -100,6 +101,12 @@ router.get(
  * @desc    Get all company admins (Super Admin only)
  */
 router.get("/company-admins", protect, superAdminOnly, getAllCompanyAdmins);
+
+/**
+ * @route   GET /api/superadmin/customers
+ * @desc    Get all registered customers (Super Admin only)
+ */
+router.get("/customers", protect, superAdminOnly, getAllCustomers);
 
 /**
  * @route   PUT /api/superadmin/company-admins/:adminId/password
@@ -222,8 +229,6 @@ router.put(
     }
   },
 );
-
-// ================= SUPERADMIN ACCOUNT SETTINGS =================
 
 // ================= SUPERADMIN ACCOUNT SETTINGS =================
 router.get("/profile", protect, superAdminOnly, getSuperAdminProfile);
