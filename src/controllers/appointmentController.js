@@ -131,9 +131,8 @@ export const bookAppointment = async (req, res) => {
 
     // 🔥 Increment ONLY if FREE plan
     if (user.planType === "free") {
-      await User.findByIdAndUpdate(req.user._id, {
-        $inc: { bookingUsed: 1 },
-      });
+      user.bookingUsed += 1;
+      await user.save();
     }
 
     res.status(201).json({ appointment });

@@ -6,12 +6,15 @@ import {
   resetPassword,
   uploadProfilePhoto,
   upload,
+  getUserProfile
 } from "../controllers/userController.js";
 import { protect } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
 /* ================= USER PROFILE ================= */
+// Get logged-in user profile
+router.get("/profile", protect, getUserProfile);
 
 // Update profile photo
 router.patch(

@@ -217,3 +217,25 @@ export const uploadProfilePhoto = async (req, res) => {
     res.status(500).json({ message: error.message || "Upload failed" });
   }
 };
+
+/* ================= GET USER PROFILE (FOR PLAN + BOOKING DATA) ================= */
+export const getUserProfile = async (req, res) => {
+  try {
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({ message: "Not authorized" });
+    }
+
+    const user = await User.findById(req.user._id).select(
+      "-password"
+    );
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json(user);
+  } catch (error) {
+    console.error("GET USER PROFILE ERROR:", error);
+    res.status(500).json({ message: "Failed to fetch profile" });
+  }
+};
